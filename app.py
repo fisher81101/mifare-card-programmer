@@ -183,7 +183,9 @@ def create_program():
     if form.validate_on_submit():
         try:
             # Validate JSON format
-            json.loads(form.sector_data.data)
+            sector_data = form.sector_data.data
+            if sector_data:
+                json.loads(sector_data)
             
             program = CardProgram(
                 name=form.name.data,
@@ -393,7 +395,7 @@ def manage_programs():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    programs = MifareProgram.query.all()
+    programs = CardProgram.query.all()
     return render_template('manage_programs.html', programs=programs)
 
 @app.route('/redistribute_program/<int:program_id>', methods=['GET', 'POST'])
@@ -403,7 +405,7 @@ def redistribute_program(program_id):
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('dashboard'))
     
-    program = MifareProgram.query.get_or_404(program_id)
+    program = CardProgram.query.get_or_404(program_id)
     
     if request.method == 'POST':
         user_id = request.form.get('user_id')
