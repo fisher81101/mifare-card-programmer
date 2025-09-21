@@ -23,22 +23,22 @@ args = "MIFARE Web App"
 name = "MIFARE Web App"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python run.py"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 45361
+localPort = 46171
 externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["python", "run.py"]
+run = ["python", "app.py"]
