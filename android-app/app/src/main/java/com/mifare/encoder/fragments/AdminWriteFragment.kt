@@ -72,6 +72,14 @@ class AdminWriteFragment : Fragment() {
         techLists = arrayOf(arrayOf(MifareClassic::class.java.name))
     }
     
+    /**
+     * Handle NFC intent forwarded from AdminModeActivity
+     */
+    fun handleNfcIntent(intent: Intent) {
+        val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+        tag?.let { processNfcWrite(it) }
+    }
+    
     private fun setupUI() {
         binding.writeButton.setOnClickListener {
             if (validateInputs()) {

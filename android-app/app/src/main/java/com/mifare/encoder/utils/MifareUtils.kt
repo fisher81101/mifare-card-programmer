@@ -195,4 +195,89 @@ object MifareUtils {
             b in 32..126 || b == 9 || b == 10 || b == 13
         }.toByteArray()).trim()
     }
+    
+    /**
+     * Write card data to MIFARE card (simplified implementation for user mode)
+     */
+    fun writeCardData(mifareCard: android.nfc.tech.MifareClassic, config: Map<String, String>): Boolean {
+        return try {
+            Log.d(TAG, "Writing card data to MIFARE card")
+            
+            // Extract configuration data
+            val userId = config["userId"] ?: "default"
+            val accessCode = config["accessCode"] ?: "1234"
+            val validUntil = config["validUntil"] ?: formatISODate(java.util.Date(System.currentTimeMillis() + 30L * 24 * 3600 * 1000))
+            
+            // Create data block with user info
+            val userData = "$userId:$accessCode:$validUntil"
+            val dataBytes = userData.toByteArray()
+            
+            // Pad to 16 bytes (MIFARE block size)
+            val paddedData = ByteArray(16)
+            System.arraycopy(dataBytes, 0, paddedData, 0, minOf(dataBytes.size, 16))
+            
+            // Write to sector 1, block 1 (avoiding sector trailer)
+            val sectorIndex = 1
+            val blockIndex = mifareCard.sectorToBlock(sectorIndex) + 1
+            
+            // Authenticate with default key
+            val defaultKey = byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte())
+            
+            if (mifareCard.authenticateSectorWithKeyA(sectorIndex, defaultKey)) {
+                mifareCard.writeBlock(blockIndex, paddedData)
+                Log.d(TAG, "Card data written successfully")
+                true
+            } else {
+                Log.e(TAG, "Authentication failed for sector $sectorIndex")
+                false
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to write card data", e)
+            false
+        }
+    }
+    
+    /**
+     * Read card data from MIFARE card
+     */
+    fun readCardData(mifareCard: android.nfc.tech.MifareClassic): Map<String, String>? {
+        return try {
+            Log.d(TAG, "Reading card data from MIFARE card")
+            
+            val sectorIndex = 1
+            val blockIndex = mifareCard.sectorToBlock(sectorIndex) + 1
+            
+            // Authenticate with default key
+            val defaultKey = byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte())
+            
+            if (mifareCard.authenticateSectorWithKeyA(sectorIndex, defaultKey)) {
+                val data = mifareCard.readBlock(blockIndex)
+                val userData = extractReadableText(data)
+                
+                if (userData.isNotEmpty()) {
+                    val parts = userData.split(":")
+                    if (parts.size >= 3) {
+                        mapOf(
+                            "userId" to parts[0],
+                            "accessCode" to parts[1],
+                            "validUntil" to parts[2],
+                            "rawData" to bytesToHex(data)
+                        )
+                    } else {
+                        mapOf("rawData" to bytesToHex(data))
+                    }
+                } else {
+                    mapOf("rawData" to bytesToHex(data))
+                }
+            } else {
+                Log.e(TAG, "Authentication failed for sector $sectorIndex")
+                null
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read card data", e)
+            null
+        }
+    }
 }
