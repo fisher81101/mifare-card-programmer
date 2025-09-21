@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MIFARE Hotel Key Encoder</string>
+    <string name="scan_card">Scan Card</string>
+    <string name="write_card">Write Card</string>
+    <string name="remote_config">Remote Config</string>
+    <string name="card_data">Card Data</string>
+    <string name="user_id">User ID</string>
+    <string name="access_doors">Access Doors (comma separated)</string>
+    <string name="start_date">Start Date (ISO format)</string>
+    <string name="end_date">End Date (ISO format)</string>
+    <string name="notes">Notes</string>
+    <string name="backend_url">Backend URL</string>
+    <string name="api_key">API Key</string>
+    <string name="connect">Connect</string>
+    <string name="encode_card">Encode Card</string>
+    <string name="nfc_not_supported">NFC is not supported on this device</string>
+    <string name="nfc_disabled">NFC is disabled. Please enable it in settings.</string>
+    <string name="hold_card_near">Hold MIFARE card near the device</string>
+    <string name="card_detected">Card detected</string>
+    <string name="card_read_success">Card read successfully</string>
+    <string name="card_read_failed">Failed to read card</string>
+    <string name="card_write_success">Card written successfully</string>
+    <string name="card_write_failed">Failed to write card</string>
+    <string name="invalid_input">Invalid input data</string>
+    <string name="security_warning">Security Warning</string>
+    <string name="security_message">This app is for educational purposes only. Modifying access control systems may violate laws and policies. Use responsibly.</string>
+    <string name="i_understand">I Understand</string>
+</resources>

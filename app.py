@@ -356,6 +356,124 @@ def get_program_data(token):
     except Exception as e:
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
+# Android API Endpoints
+@app.route('/api/test', methods=['GET'])
+def api_test():
+    """Test endpoint for Android app connectivity"""
+    return jsonify({
+        'success': True,
+        'message': 'MIFARE Web API is running',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': '1.0.0'
+    })
+
+@app.route('/api/android/generate-config', methods=['POST'])
+def android_generate_config():
+    """Generate card configuration for Android app"""
+    try:
+        # Check API key/authorization (basic implementation)
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Missing or invalid authorization'}), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No JSON data provided'}), 400
+        
+        # Validate required fields
+        required_fields = ['userId', 'doors', 'startDate', 'endDate']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'message': f'Missing field: {field}'}), 400
+        
+        # Generate sample Salto-compatible data structure
+        config_data = {
+            'userId': data['userId'],
+            'doors': data['doors'].split(',') if isinstance(data['doors'], str) else data['doors'],
+            'startDate': data['startDate'],
+            'endDate': data['endDate'],
+            'notes': data.get('notes', ''),
+            'accessLevel': data.get('accessLevel', 'guest'),
+            'cardType': 'mifare_classic_1k'
+        }
+        
+        # Convert to base64 encoded byte data (simulated)
+        import base64
+        config_json = json.dumps(config_data)
+        encoded_data = base64.b64encode(config_json.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Configuration generated successfully',
+            'cardData': encoded_data,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/android/programming-result', methods=['POST'])
+def android_programming_result():
+    """Receive programming result from Android app"""
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Missing or invalid authorization'}), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No JSON data provided'}), 400
+        
+        # Log the programming result
+        print(f"Android Programming Result: User {data.get('userId')}, Card {data.get('cardUid')}, Success: {data.get('success')}")
+        
+        if not data.get('success', False):
+            print(f"Programming Error: {data.get('errorMessage')}")
+        
+        # Here you could store the result in a database table if needed
+        # For now, we'll just acknowledge receipt
+        
+        return jsonify({
+            'success': True,
+            'message': 'Programming result received',
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/android/programs', methods=['GET'])
+def android_get_programs():
+    """Get available card programs for Android app"""
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Missing or invalid authorization'}), 401
+        
+        # Get all active programs
+        programs = CardProgram.query.filter_by(is_active=True).all()
+        
+        program_list = []
+        for program in programs:
+            program_data = {
+                'id': program.id,
+                'name': program.name,
+                'description': program.description,
+                'created_at': program.created_at.isoformat(),
+                'sector_data_size': len(program.sector_data) if program.sector_data else 0
+            }
+            program_list.append(program_data)
+        
+        return jsonify({
+            'success': True,
+            'message': f'Found {len(program_list)} programs',
+            'programs': program_list,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+
 @app.route('/api/scan_card')
 @login_required
 def scan_card():
