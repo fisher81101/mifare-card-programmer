@@ -41,17 +41,23 @@ class PrefixMiddleware(object):
         self.prefix = prefix
 
     def __call__(self, environ, start_response):
-        if environ['PATH_INFO'].startswith(self.prefix):
-            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
+        path_info = environ['PATH_INFO']
+        # Handle both /app and /app/ paths
+        if path_info == self.prefix or path_info.startswith(self.prefix + '/'):
+            # Strip the prefix
+            stripped_path = path_info[len(self.prefix):]
+            # Normalize: if empty after stripping, set to root
+            environ['PATH_INFO'] = stripped_path if stripped_path else '/'
             environ['SCRIPT_NAME'] = self.prefix
             return self.app(environ, start_response)
         else:
             start_response('404', [('Content-Type', 'text/plain')])
             return ["This URL does not belong to the app.".encode()]
 
-# Apply middleware if deployed to subdirectory
-if os.environ.get('REPLIT_DEPLOYMENT') == 'autoscale':
-    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/app')
+# Apply middleware for subdirectory deployment
+URL_PREFIX = os.environ.get('URL_PREFIX', '/app')
+if URL_PREFIX:
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=URL_PREFIX)
 
 # Make datetime available in templates
 @app.context_processor
