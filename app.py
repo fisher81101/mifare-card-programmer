@@ -54,8 +54,8 @@ class PrefixMiddleware(object):
             start_response('404', [('Content-Type', 'text/plain')])
             return ["This URL does not belong to the app.".encode()]
 
-# Apply middleware for subdirectory deployment
-URL_PREFIX = os.environ.get('URL_PREFIX', '/app')
+# Apply middleware for subdirectory deployment (only if URL_PREFIX is set)
+URL_PREFIX = os.environ.get('URL_PREFIX')
 if URL_PREFIX:
     app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=URL_PREFIX)
 
