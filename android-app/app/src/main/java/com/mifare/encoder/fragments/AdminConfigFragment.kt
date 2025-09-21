@@ -19,13 +19,13 @@ class AdminConfigFragment : Fragment() {
     private var _binding: FragmentAdminConfigBinding? = null
     private val binding get() = _binding!!
     
-    private lateinit var prefs: SharedPreferences
+    private lateinit var securePrefs: SharedPreferences
     private lateinit var authManager: AuthManager
     private var apiClient: ApiClient? = null
     
     companion object {
         private const val TAG = "AdminConfigFragment"
-        private const val PREFS_NAME = "admin_config"
+        private const val SECURE_PREFS_NAME = "admin_config_secure"
         private const val KEY_BACKEND_URL = "backend_url"
         private const val KEY_API_KEY = "api_key"
         private const val KEY_USER_MODE_URL = "user_mode_url"
@@ -44,7 +44,19 @@ class AdminConfigFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        prefs = requireContext().getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+        // Use encrypted shared preferences for secure storage of API keys
+        val masterKey = androidx.security.crypto.MasterKey.Builder(requireContext())
+            .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        
+        securePrefs = androidx.security.crypto.EncryptedSharedPreferences.create(
+            requireContext(),
+            SECURE_PREFS_NAME,
+            masterKey,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+        
         authManager = AuthManager.getInstance(requireContext())
         
         setupUI()
@@ -89,16 +101,16 @@ class AdminConfigFragment : Fragment() {
     }
     
     private fun loadSavedConfig() {
-        // Load admin backend config
-        val savedUrl = prefs.getString(KEY_BACKEND_URL, "http://10.0.2.2:5000")
-        val savedApiKey = prefs.getString(KEY_API_KEY, "admin-api-key")
+        // Load admin backend config from encrypted storage
+        val savedUrl = securePrefs.getString(KEY_BACKEND_URL, "http://10.0.2.2:5000")
+        val savedApiKey = securePrefs.getString(KEY_API_KEY, "admin-api-key")
         
         binding.backendUrlEditText.setText(savedUrl)
         binding.apiKeyEditText.setText(savedApiKey)
         
-        // Load user mode config
-        val userUrl = prefs.getString(KEY_USER_MODE_URL, "http://10.0.2.2:5000")
-        val userApiKey = prefs.getString(KEY_USER_MODE_API_KEY, "user-mode-key")
+        // Load user mode config from encrypted storage
+        val userUrl = securePrefs.getString(KEY_USER_MODE_URL, "http://10.0.2.2:5000")
+        val userApiKey = securePrefs.getString(KEY_USER_MODE_API_KEY, "user-mode-key")
         
         binding.userModeUrlEditText.setText(userUrl)
         binding.userModeApiKeyEditText.setText(userApiKey)
@@ -122,7 +134,7 @@ class AdminConfigFragment : Fragment() {
             return
         }
         
-        prefs.edit()
+        securePrefs.edit()
             .putString(KEY_BACKEND_URL, url)
             .putString(KEY_API_KEY, apiKey)
             .apply()
@@ -137,19 +149,36 @@ class AdminConfigFragment : Fragment() {
         val url = binding.userModeUrlEditText.text.toString().trim()
         val apiKey = binding.userModeApiKeyEditText.text.toString().trim()
         
-        // Save user mode config to separate preferences
-        val userPrefs = requireContext().getSharedPreferences("user_config", android.content.Context.MODE_PRIVATE)
-        userPrefs.edit()
-            .putString("backend_url", url)
-            .putString("api_key", apiKey)
-            .apply()
-        
-        prefs.edit()
+        // SECURITY FIX: Only save to encrypted preferences, remove plaintext storage
+        securePrefs.edit()
             .putString(KEY_USER_MODE_URL, url)
             .putString(KEY_USER_MODE_API_KEY, apiKey)
             .apply()
         
-        showMessage("User mode configuration saved")
+        // Migrate any existing plaintext user config to secure storage
+        migrateUserConfigToSecureStorage()
+        
+        showMessage("User mode configuration saved securely")
+    }
+    
+    private fun migrateUserConfigToSecureStorage() {
+        // One-time migration from plaintext to encrypted storage
+        val userPrefs = requireContext().getSharedPreferences("user_config", android.content.Context.MODE_PRIVATE)
+        val existingUrl = userPrefs.getString("backend_url", null)
+        val existingApiKey = userPrefs.getString("api_key", null)
+        
+        if (!existingUrl.isNullOrEmpty() || !existingApiKey.isNullOrEmpty()) {
+            // Migrate to secure storage
+            securePrefs.edit()
+                .putString(KEY_USER_MODE_URL, existingUrl ?: "")
+                .putString(KEY_USER_MODE_API_KEY, existingApiKey ?: "")
+                .apply()
+            
+            // Clear plaintext storage
+            userPrefs.edit().clear().apply()
+            
+            android.util.Log.i(TAG, "Migrated user config from plaintext to encrypted storage")
+        }
     }
     
     private fun testBackendConnection() {
@@ -260,15 +289,15 @@ class AdminConfigFragment : Fragment() {
         
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Change Admin Password")
-            .setMessage("Enter new password (minimum 6 characters):")
+            .setMessage("Enter new password (minimum 8 characters):")
             .setView(input)
             .setPositiveButton("Change") { _, _ ->
                 val newPassword = input.text.toString()
-                if (newPassword.length >= 6) {
+                if (newPassword.length >= 8) {
                     authManager.setAdminPassword(newPassword)
                     showMessage("Password updated successfully")
                 } else {
-                    showMessage("Password must be at least 6 characters")
+                    showMessage("Password must be at least 8 characters")
                 }
             }
             .setNegativeButton("Cancel", null)

@@ -97,16 +97,36 @@ class UserModeActivity : AppCompatActivity() {
     }
     
     private fun loadBackendConfig() {
-        // Load pre-configured backend settings for user mode
-        val prefs = getSharedPreferences("user_config", MODE_PRIVATE)
-        val backendUrl = prefs.getString("backend_url", "http://10.0.2.2:5000") // Default for emulator
-        val apiKey = prefs.getString("api_key", "user-mode-key")
-        
-        if (!backendUrl.isNullOrEmpty()) {
-            apiClient = ApiClient(backendUrl, apiKey ?: "")
-            Log.d(TAG, "Backend configured: $backendUrl")
+        // SECURITY FIX: Ensure app-wide migration and load from encrypted storage only
+        try {
+            val masterKey = androidx.security.crypto.MasterKey.Builder(this)
+                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            
+            val securePrefs = androidx.security.crypto.EncryptedSharedPreferences.create(
+                this,
+                "admin_config_secure",
+                masterKey,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+            
+            // Migration handled globally by MifareApplication.onCreate()
+            
+            val backendUrl = securePrefs.getString("user_mode_url", "http://10.0.2.2:5000") // Default for emulator
+            val apiKey = securePrefs.getString("user_mode_api_key", "user-mode-key")
+            
+            if (!backendUrl.isNullOrEmpty()) {
+                apiClient = ApiClient(backendUrl, apiKey ?: "")
+                Log.d(TAG, "Backend configured securely: $backendUrl")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load secure backend config", e)
+            // Fallback to default config for user mode
+            apiClient = ApiClient("http://10.0.2.2:5000", "user-mode-key")
         }
     }
+    
     
     override fun onResume() {
         super.onResume()

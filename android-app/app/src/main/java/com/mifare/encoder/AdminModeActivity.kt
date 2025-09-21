@@ -1,6 +1,10 @@
 package com.mifare.encoder
 
+import android.app.PendingIntent
 import android.content.Intent
+import android.content.IntentFilter
+import android.nfc.NfcAdapter
+import android.nfc.tech.MifareClassic
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -16,6 +20,12 @@ class AdminModeActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityAdminModeBinding
     private lateinit var authManager: AuthManager
+    
+    // NFC handling
+    private var nfcAdapter: NfcAdapter? = null
+    private var pendingIntent: PendingIntent? = null
+    private var intentFilters: Array<IntentFilter>? = null
+    private var techLists: Array<Array<String>>? = null
     
     // Fragment instances
     private val scanFragment = AdminScanFragment()
@@ -41,8 +51,18 @@ class AdminModeActivity : AppCompatActivity() {
             return
         }
         
+        // SECURITY: Defensive migration check (secondary safety net)
+        performDefensiveMigration()
+        
+        // Check if first-run password change is required
+        if (authManager.isFirstRunPasswordChangeRequired()) {
+            showFirstRunPasswordChangeDialog()
+            return
+        }
+        
         setupToolbar()
         setupTabs()
+        setupNFC()
         
         // Show scan fragment by default
         showFragment(scanFragment)
@@ -76,6 +96,67 @@ class AdminModeActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+    
+    private fun setupNFC() {
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        
+        if (nfcAdapter != null) {
+            pendingIntent = PendingIntent.getActivity(
+                this, 0,
+                Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                PendingIntent.FLAG_MUTABLE
+            )
+            
+            val mifareFilter = IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)
+            intentFilters = arrayOf(mifareFilter)
+            techLists = arrayOf(arrayOf(MifareClassic::class.java.name))
+        }
+    }
+    
+    private fun showFirstRunPasswordChangeDialog() {
+        val input = android.widget.EditText(this)
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        input.hint = "New secure admin password"
+        
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("First Run: Change Default Password")
+            .setMessage("For security, you must change the default admin password before using admin features.\n\nNew password must be at least 8 characters.")
+            .setView(input)
+            .setPositiveButton("Change Password") { _, _ ->
+                val newPassword = input.text.toString()
+                if (newPassword.length >= 8) {
+                    authManager.setAdminPassword(newPassword)
+                    authManager.markFirstRunPasswordChanged()
+                    android.widget.Toast.makeText(this, "Admin password updated successfully", android.widget.Toast.LENGTH_SHORT).show()
+                    
+                    // Now proceed with normal admin setup
+                    setupToolbar()
+                    setupTabs()
+                    setupNFC()
+                    showFragment(scanFragment)
+                } else {
+                    android.widget.Toast.makeText(this, "Password must be at least 8 characters", android.widget.Toast.LENGTH_LONG).show()
+                    showFirstRunPasswordChangeDialog() // Try again
+                }
+            }
+            .setCancelable(false)
+            .create()
+        
+        dialog.show()
+    }
+    
+    private fun performDefensiveMigration() {
+        // SECURITY: Secondary safety net for legacy plaintext cleanup
+        try {
+            // Clean up any remaining plaintext files as defensive measure
+            deleteSharedPreferences("admin_config")
+            deleteSharedPreferences("user_config")
+        } catch (e: Exception) {
+            // Fallback: clear content if deletion fails
+            getSharedPreferences("admin_config", MODE_PRIVATE).edit().clear().apply()
+            getSharedPreferences("user_config", MODE_PRIVATE).edit().clear().apply()
+        }
     }
     
     private fun showFragment(fragment: Fragment) {
@@ -129,11 +210,11 @@ class AdminModeActivity : AppCompatActivity() {
             .setView(input)
             .setPositiveButton("Change") { _, _ ->
                 val newPassword = input.text.toString()
-                if (newPassword.length >= 6) {
+                if (newPassword.length >= 8) {
                     authManager.setAdminPassword(newPassword)
                     android.widget.Toast.makeText(this, "Password updated", android.widget.Toast.LENGTH_SHORT).show()
                 } else {
-                    android.widget.Toast.makeText(this, "Password must be at least 6 characters", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(this, "Password must be at least 8 characters", android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -169,6 +250,30 @@ class AdminModeActivity : AppCompatActivity() {
         // Check if session is still valid
         if (!authManager.isAdminMode()) {
             returnToUserMode()
+            return
+        }
+        
+        // Enable NFC foreground dispatch for admin fragments
+        nfcAdapter?.enableForegroundDispatch(this, pendingIntent, intentFilters, techLists)
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter?.disableForegroundDispatch(this)
+    }
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        
+        // Forward NFC intents to the appropriate admin fragment
+        intent?.let { nfcIntent ->
+            if (NfcAdapter.ACTION_TECH_DISCOVERED == nfcIntent.action) {
+                when (binding.tabLayout.selectedTabPosition) {
+                    0 -> scanFragment.handleNfcIntent(nfcIntent) // Scan fragment
+                    1 -> writeFragment.handleNfcIntent(nfcIntent) // Write fragment
+                }
+            }
         }
     }
 }

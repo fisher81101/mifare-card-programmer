@@ -17,6 +17,7 @@ class AuthManager(private val context: Context) {
         private const val KEY_ADMIN_PASSWORD_HASH = "admin_password_hash"
         private const val KEY_IS_ADMIN_MODE = "is_admin_mode"
         private const val KEY_ADMIN_SESSION_TIMEOUT = "admin_session_timeout"
+        private const val KEY_FIRST_RUN_PASSWORD_CHANGED = "first_run_password_changed"
         private const val DEFAULT_ADMIN_PASSWORD = "admin123"
         private const val SESSION_TIMEOUT_MS = 30 * 60 * 1000L // 30 minutes
         
@@ -46,6 +47,10 @@ class AuthManager(private val context: Context) {
         // Initialize default password if not set
         if (!encryptedPrefs.contains(KEY_ADMIN_PASSWORD_HASH)) {
             setAdminPassword(DEFAULT_ADMIN_PASSWORD)
+            // Mark as needing password change on first run
+            encryptedPrefs.edit()
+                .putBoolean(KEY_FIRST_RUN_PASSWORD_CHANGED, false)
+                .apply()
         }
     }
     
@@ -76,6 +81,24 @@ class AuthManager(private val context: Context) {
         }
         
         return isValid
+    }
+    
+    fun isFirstRunPasswordChangeRequired(): Boolean {
+        // Check flag first
+        val hasChangedFlag = encryptedPrefs.getBoolean(KEY_FIRST_RUN_PASSWORD_CHANGED, false)
+        
+        // Always check if current password is still the default, regardless of flag
+        val currentHash = encryptedPrefs.getString(KEY_ADMIN_PASSWORD_HASH, "")
+        val defaultHash = hashPassword(DEFAULT_ADMIN_PASSWORD)
+        
+        return !hasChangedFlag || currentHash == defaultHash
+    }
+    
+    fun markFirstRunPasswordChanged() {
+        encryptedPrefs.edit()
+            .putBoolean(KEY_FIRST_RUN_PASSWORD_CHANGED, true)
+            .apply()
+        logAdminAction("First-run password change completed")
     }
     
     fun setAdminMode() {
