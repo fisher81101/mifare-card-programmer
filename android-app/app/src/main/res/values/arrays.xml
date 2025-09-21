@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="access_levels">
+        <item>Guest</item>
+        <item>Resident</item>
+        <item>Staff</item>
+        <item>Manager</item>
+        <item>Admin</item>
+    </string-array>
+</resources>

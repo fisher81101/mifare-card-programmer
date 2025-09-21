@@ -1,98 +1,70 @@
 package com.mifare.encoder
 
-import android.app.PendingIntent
 import android.content.Intent
-import android.content.IntentFilter
 import android.nfc.NfcAdapter
-import android.nfc.tech.MifareClassic
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AlertDialog
-import com.mifare.encoder.databinding.ActivityMainBinding
+import com.mifare.encoder.fragments.AdminScanFragment
+import com.mifare.encoder.fragments.AdminWriteFragment
+import com.mifare.encoder.utils.AuthManager
 
+/**
+ * Main Activity - Entry point that routes to appropriate mode
+ * 
+ * This activity determines whether to show the simplified user interface
+ * or redirect to admin mode if already authenticated.
+ */
 class MainActivity : AppCompatActivity() {
     
-    private lateinit var binding: ActivityMainBinding
-    private var nfcAdapter: NfcAdapter? = null
-    private var pendingIntent: PendingIntent? = null
-    private var intentFiltersArray: Array<IntentFilter>? = null
-    private var techListsArray: Array<Array<String>>? = null
+    private lateinit var authManager: AuthManager
+    
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
         
-        setupNFC()
-        setupUI()
-        showSecurityWarning()
-    }
-
-    private fun setupNFC() {
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        authManager = AuthManager.getInstance(this)
         
-        if (nfcAdapter == null) {
-            Toast.makeText(this, getString(R.string.nfc_not_supported), Toast.LENGTH_LONG).show()
-            return
-        }
-        
-        // Create a PendingIntent object for foreground dispatch
-        pendingIntent = PendingIntent.getActivity(
-            this, 0,
-            Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-            PendingIntent.FLAG_MUTABLE
-        )
-        
-        // Setup intent filters
-        val ndef = IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)
-        intentFiltersArray = arrayOf(ndef)
-        
-        // Setup technology lists
-        techListsArray = arrayOf(arrayOf<String>(MifareClassic::class.java.name))
-    }
-
-    private fun setupUI() {
-        binding.scanCardButton.setOnClickListener {
-            startActivity(Intent(this, CardScanActivity::class.java))
-        }
-        
-        binding.writeCardButton.setOnClickListener {
-            startActivity(Intent(this, CardWriteActivity::class.java))
-        }
-        
-        binding.remoteConfigButton.setOnClickListener {
-            startActivity(Intent(this, RemoteConfigActivity::class.java))
-        }
+        // Route to appropriate mode based on authentication state
+        routeToAppropriateMode()
     }
     
-    private fun showSecurityWarning() {
-        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        if (!prefs.getBoolean("security_warning_shown", false)) {
-            AlertDialog.Builder(this)
-                .setTitle(getString(R.string.security_warning))
-                .setMessage(getString(R.string.security_message))
-                .setPositiveButton(getString(R.string.i_understand)) { _, _ ->
-                    prefs.edit().putBoolean("security_warning_shown", true).apply()
-                }
-                .setCancelable(false)
-                .show()
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (nfcAdapter != null && !nfcAdapter!!.isEnabled) {
-            Toast.makeText(this, getString(R.string.nfc_disabled), Toast.LENGTH_LONG).show()
+    private fun routeToAppropriateMode() {
+        if (authManager.isAdminMode()) {
+            // User is already authenticated as admin
+            startActivity(Intent(this, AdminModeActivity::class.java))
+        } else {
+            // Default to user mode
+            startActivity(Intent(this, UserModeActivity::class.java))
         }
         
-        nfcAdapter?.enableForegroundDispatch(
-            this, pendingIntent, intentFiltersArray, techListsArray
-        )
+        finish() // Close MainActivity since it's just a router
     }
-
-    override fun onPause() {
-        super.onPause()
-        nfcAdapter?.disableForegroundDispatch(this)
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        
+        // Handle NFC intents if they come to MainActivity
+        // Forward to appropriate activity based on current mode
+        intent?.let { nfcIntent ->
+            if (NfcAdapter.ACTION_TECH_DISCOVERED == nfcIntent.action) {
+                if (authManager.isAdminMode()) {
+                    // Forward to admin mode
+                    val adminIntent = Intent(this, AdminModeActivity::class.java)
+                    adminIntent.action = nfcIntent.action
+                    adminIntent.putExtras(nfcIntent.extras ?: Bundle())
+                    startActivity(adminIntent)
+                } else {
+                    // Forward to user mode
+                    val userIntent = Intent(this, UserModeActivity::class.java)
+                    userIntent.action = nfcIntent.action
+                    userIntent.putExtras(nfcIntent.extras ?: Bundle())
+                    startActivity(userIntent)
+                }
+                finish()
+            }
+        }
     }
 }

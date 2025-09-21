@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MIFARE Hotel Key Encoder</string>
+    <string name="hotel_key_encoder">Hotel Key Encoder</string>
+    
+    <!-- User Mode -->
+    <string name="user_instructions">Hold your MIFARE card near the back of your phone to program it.</string>
+    <string name="ready_to_program">Ready to program cards</string>
+    <string name="app_logo">App Logo</string>
+    <string name="nfc_icon">NFC Icon</string>
+    <string name="educational_warning">Educational use only. Follow all applicable laws and regulations.</string>
+    
+    <!-- Admin Mode -->
+    <string name="admin_mode">Admin Mode</string>
+    <string name="full_access_enabled">Full Access Enabled</string>
+    
+    <!-- Original strings (preserved) -->
     <string name="scan_card">Scan Card</string>
     <string name="write_card">Write Card</string>
     <string name="remote_config">Remote Config</string>
@@ -23,7 +37,15 @@
     <string name="card_write_success">Card written successfully</string>
     <string name="card_write_failed">Failed to write card</string>
     <string name="invalid_input">Invalid input data</string>
-    <string name="security_warning">Security Warning</string>
-    <string name="security_message">This app is for educational purposes only. Modifying access control systems may violate laws and policies. Use responsibly.</string>
+    <string name="security_warning">⚠️ Security Warning</string>
+    <string name="security_message">This application is for EDUCATIONAL PURPOSES ONLY.\n\n• Only use on systems you own or have explicit permission to test\n• Modifying access control systems may violate laws\n• Always obtain proper authorization before analyzing cards\n• Respect privacy and security of existing installations\n\nBy continuing, you acknowledge these responsibilities.</string>
     <string name="i_understand">I Understand</string>
+    
+    <!-- Status Messages -->
+    <string name="status_text">Status Text</string>
+    <string name="warning_text">Warning Text</string>
+    <string name="success">Success</string>
+    <string name="error">Error</string>
+    <string name="info">Info</string>
+    <string name="warning">Warning</string>
 </resources>

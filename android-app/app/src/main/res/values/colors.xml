@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Material Design Colors -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,10 +8,26 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- User Mode Colors -->
+    <color name="user_mode_background">#F5F5F5</color>
+    <color name="user_mode_text">#333333</color>
+    <color name="status_text">#666666</color>
+    <color name="warning_text">#FF9800</color>
+    
+    <!-- Admin Mode Colors -->
+    <color name="admin_primary">#D32F2F</color>
+    <color name="admin_primary_dark">#B71C1C</color>
+    <color name="admin_accent">#FF5722</color>
+    <color name="admin_tab_text">#FFCDD2</color>
+    <color name="admin_tab_selected">#FFFFFF</color>
+    
+    <!-- Status Colors (preserved and enhanced) -->
     <color name="primary">#FF2196F3</color>
     <color name="primary_dark">#FF1976D2</color>
     <color name="accent">#FFFF4081</color>
     <color name="success">#FF4CAF50</color>
     <color name="warning">#FFFF9800</color>
     <color name="error">#FFF44336</color>
+    <color name="info">#FF2196F3</color>
 </resources>

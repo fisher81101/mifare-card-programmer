@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_user_mode"
+        android:title="Switch to User Mode"
+        android:icon="@drawable/ic_user"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_change_password"
+        android:title="Change Password"
+        android:icon="@drawable/ic_lock"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_clear_logs"
+        android:title="Clear Logs"
+        android:icon="@drawable/ic_clear"
+        app:showAsAction="never" />
+
+</menu>
