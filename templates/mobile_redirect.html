@@ -19,32 +19,27 @@
                 </div>
 
                 <div id="appNotInstalled" style="display: none;" class="mb-4">
-                    <i class="fas fa-download fa-3x text-warning mb-3"></i>
-                    <h5>RF Access App Required</h5>
-                    <p class="text-muted mb-4">The RF Access app is required to program your MIFARE card.</p>
+                    <i class="fas fa-mobile-alt fa-3x text-info mb-3"></i>
+                    <h5>RF Access App Not Available</h5>
+                    <p class="text-muted mb-4">The companion Android app is currently being developed.</p>
                     
-                    <div class="alert alert-warning mb-3">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>App Currently Has Issues:</strong>
-                        <p class="mb-2 mt-2">The current APK may crash due to package name conflicts. We're working on fixes.</p>
-                        <ol class="mb-0">
-                            <li>Download APK below (may crash on launch)</li>
-                            <li>Enable "Install from Unknown Sources" in Android settings</li>
-                            <li>Install and test - if it crashes, a fix is coming soon</li>
-                            <li>Check back for updated APK once GitHub fixes are applied</li>
-                        </ol>
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>App Status:</strong>
+                        <p class="mb-2 mt-2">The RF Access Android app is in development and not yet available for download.</p>
+                        <ul class="mb-0">
+                            <li>Web interface provides full MIFARE card programming functionality</li>
+                            <li>NFC card operations work directly in your mobile browser</li>
+                            <li>No app installation required - use the web interface below</li>
+                        </ul>
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="https://github.com/Levit513/RF-Access/releases/download/v1.0.0.0/app-debug.apk" 
-                           class="btn btn-primary btn-lg" target="_blank" id="downloadApk">
-                            <i class="fab fa-github me-2"></i>Download RF Access APK
-                        </a>
-                        <button class="btn btn-outline-primary" onclick="tryAppAgain()">
-                            <i class="fas fa-redo me-2"></i>Try Opening App Again
+                        <button class="btn btn-primary btn-lg" onclick="showWebInterface()">
+                            <i class="fas fa-globe me-2"></i>Use Web Interface
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="showWebInterface()">
-                            <i class="fas fa-globe me-2"></i>Use Web Interface Instead
+                        <button class="btn btn-outline-primary" onclick="tryAppAgain()">
+                            <i class="fas fa-redo me-2"></i>Try App Detection Again
                         </button>
                     </div>
                     
@@ -57,12 +52,12 @@
                 </div>
 
                 <div id="webInterface" style="display: none;">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Note:</strong> Web interface has limitations. For full MIFARE programming, please use the RF Access app.
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Web Interface Ready:</strong> Full MIFARE card programming available through your mobile browser.
                     </div>
                     <div class="d-grid">
-                        <a href="/program/{{ token }}?force_web=1" class="btn btn-primary">
+                        <a href="/program/{{ token }}?force_web=1" class="btn btn-success btn-lg">
                             <i class="fas fa-globe me-2"></i>Continue with Web Interface
                         </a>
                     </div>
@@ -167,16 +162,6 @@ setTimeout(() => {
     }
 }, 2000);
 
-// Add download tracking
-document.addEventListener('DOMContentLoaded', function() {
-    const downloadBtn = document.getElementById('downloadApk');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', function() {
-            // Store that user initiated download
-            localStorage.setItem('rfaccess_download_initiated', 'true');
-            localStorage.setItem('rfaccess_return_url', window.location.href);
-        });
-    }
-});
+// Note: No download tracking needed since app is not available
 </script>
 {% endblock %}
