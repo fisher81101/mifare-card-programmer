@@ -1,0 +1,8 @@
+modules = ["web", "nodejs-20", "python-3.11"]
+
+[nix]
+channel = "stable-25_05"
+packages = ["cargo", "freetype", "gmp", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "rustc", "tcl", "tk", "zlib"]
+
+[agent]
+expertMode = true
