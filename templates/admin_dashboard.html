@@ -108,6 +108,43 @@
                             <i class="fas fa-share me-2"></i>Distribute Program
                         </a>
                     </div>
+                    <div class="col-md-3 mb-2">
+                        <button id="updateApkBtn" class="btn btn-secondary w-100" onclick="updateApk()">
+                            <i class="fas fa-download me-2"></i>Update APK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- APK Status Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fab fa-android me-2"></i>Android APK Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="apkStatus" class="alert alert-info">
+                    <i class="fas fa-spinner fa-spin me-2"></i>Loading APK status...
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Download Links:</h6>
+                        <ul class="list-unstyled">
+                            <li><a href="/static/downloads/app-debug.apk" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-1"></i>Download APK
+                            </a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Repository:</h6>
+                        <p><a href="https://github.com/Levit513/RF-Access" target="_blank">
+                            <i class="fab fa-github me-1"></i>Levit513/RF-Access
+                        </a></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,5 +307,105 @@ function copyLink(token) {
         prompt('Copy this link:', link);
     });
 }
+
+// APK Management Functions
+async function updateApk() {
+    const btn = document.getElementById('updateApkBtn');
+    const statusDiv = document.getElementById('apkStatus');
+    
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+    statusDiv.className = 'alert alert-info';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting APK download from GitHub...';
+    
+    try {
+        const response = await fetch('/admin/update-apk', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            statusDiv.className = 'alert alert-success';
+            statusDiv.innerHTML = '<i class="fas fa-check me-2"></i>APK update started successfully! Check status below.';
+            
+            // Monitor progress
+            monitorApkStatus();
+        } else {
+            statusDiv.className = 'alert alert-danger';
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Failed to start APK update: ' + result.error;
+        }
+    } catch (error) {
+        statusDiv.className = 'alert alert-danger';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error: ' + error.message;
+    }
+    
+    // Re-enable button
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-download me-2"></i>Update APK';
+}
+
+async function loadApkStatus() {
+    const statusDiv = document.getElementById('apkStatus');
+    
+    try {
+        const response = await fetch('/api/apk-status');
+        const status = await response.json();
+        
+        if (status.last_update) {
+            const lastUpdate = new Date(status.last_update).toLocaleString();
+            
+            if (status.success) {
+                statusDiv.className = 'alert alert-success';
+                statusDiv.innerHTML = `<i class="fas fa-check me-2"></i><strong>APK Up to Date</strong><br>
+                    Last updated: ${lastUpdate}<br>
+                    Repository: ${status.repository}`;
+            } else {
+                statusDiv.className = 'alert alert-warning';
+                statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i><strong>APK Update Failed</strong><br>
+                    Last attempt: ${lastUpdate}<br>
+                    Message: ${status.message}`;
+            }
+        } else {
+            statusDiv.className = 'alert alert-info';
+            statusDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i>No APK downloads attempted yet. Click "Update APK" to download the latest build from GitHub.';
+        }
+    } catch (error) {
+        statusDiv.className = 'alert alert-danger';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Failed to load APK status: ' + error.message;
+    }
+}
+
+function monitorApkStatus() {
+    // Poll status every 3 seconds for up to 2 minutes
+    let attempts = 0;
+    const maxAttempts = 40; // 2 minutes
+    
+    const interval = setInterval(async () => {
+        attempts++;
+        
+        if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            return;
+        }
+        
+        await loadApkStatus();
+        
+        // Check if download is complete
+        const statusDiv = document.getElementById('apkStatus');
+        if (statusDiv.classList.contains('alert-success') || statusDiv.classList.contains('alert-warning')) {
+            clearInterval(interval);
+        }
+    }, 3000);
+}
+
+// Load APK status when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadApkStatus();
+});
 </script>
 {% endblock %}

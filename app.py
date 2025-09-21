@@ -19,8 +19,15 @@ import io
 import base64
 from datetime import datetime, timedelta
 import secrets
+import hmac
+import hashlib
 import jwt
 from mifare import CardReader, MifareUtils
+from github_automation import GitHubAPKDownloader
+import threading
+
+# Global lock for APK download concurrency protection
+apk_download_lock = threading.Lock()
 
 app = Flask(__name__)
 
@@ -592,6 +599,161 @@ def create_user():
         return redirect(url_for('manage_users'))
     
     return render_template('create_user.html')
+
+# APK Automation Endpoints
+@app.route('/webhook/github', methods=['POST'])
+def github_webhook():
+    """Handle GitHub webhook notifications for automated APK downloads"""
+    try:
+        # Require webhook secret to be configured
+        webhook_secret = os.environ.get('WEBHOOK_SECRET')
+        if not webhook_secret:
+            print("❌ WEBHOOK_SECRET not configured - rejecting webhook")
+            return jsonify({'error': 'Webhook secret not configured'}), 500
+        
+        # MANDATORY signature verification for security
+        signature = request.headers.get('X-Hub-Signature-256')
+        if not signature:
+            print("❌ Missing webhook signature - rejecting unauthenticated request")
+            return jsonify({'error': 'Signature required'}), 401
+        
+        expected_signature = 'sha256=' + hmac.new(
+            webhook_secret.encode(), request.data, hashlib.sha256
+        ).hexdigest()
+        
+        if not secrets.compare_digest(signature, expected_signature):
+            print("❌ Invalid webhook signature - rejecting unauthorized request")  
+            return jsonify({'error': 'Invalid signature'}), 401
+        
+        # Verify GitHub event type
+        event_type = request.headers.get('X-GitHub-Event')
+        if event_type != 'workflow_run':
+            return jsonify({'status': 'ignored - not a workflow_run event'}), 200
+        
+        payload = request.json
+        
+        # Verify repository to prevent cross-repo triggers
+        repository = payload.get('repository', {})
+        repo_full_name = repository.get('full_name', '')
+        if repo_full_name != 'Levit513/RF-Access':
+            print(f"❌ Ignoring webhook from different repository: {repo_full_name}")
+            return jsonify({'status': 'ignored - wrong repository'}), 200
+        
+        # Check if it's a workflow_run completion event with success
+        if (payload.get('action') == 'completed' and 
+            payload.get('workflow_run', {}).get('conclusion') == 'success'):
+            
+            print(f"🎯 GitHub webhook: Workflow completed successfully for {repo_full_name}")
+            
+            # Check for required GitHub token before starting
+            if not os.environ.get('GITHUB_TOKEN'):
+                error_msg = "GITHUB_TOKEN not configured - cannot download APK artifacts"
+                print(f"❌ {error_msg}")
+                return jsonify({'error': error_msg}), 503
+            
+            # Check concurrency protection
+            if apk_download_lock.locked():
+                print("⚠️ APK download already in progress - skipping duplicate trigger")
+                return jsonify({'status': 'download already in progress'}), 200
+            
+            # Trigger APK download in background with concurrency protection
+            threading.Thread(target=download_latest_apk_async, daemon=True).start()
+            return jsonify({'status': 'APK download triggered'}), 200
+        
+        return jsonify({'status': 'ignored'}), 200
+        
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/update-apk', methods=['POST'])
+@login_required
+def update_apk():
+    """Manually trigger APK download (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        # Check for required GitHub token
+        if not os.environ.get('GITHUB_TOKEN'):
+            return jsonify({'error': 'GITHUB_TOKEN not configured - cannot download APK artifacts'}), 503
+        
+        # Check concurrency protection  
+        if apk_download_lock.locked():
+            return jsonify({'status': 'APK download already in progress'}), 200
+            
+        threading.Thread(target=download_latest_apk_async, daemon=True).start()
+        return jsonify({'status': 'APK download started'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/apk-status')
+def apk_status():
+    """Get current APK download status"""
+    try:
+        status_file = os.path.join('static', 'downloads', 'apk_status.json')
+        
+        if os.path.exists(status_file):
+            with open(status_file, 'r') as f:
+                status = json.load(f)
+            return jsonify(status)
+        else:
+            return jsonify({
+                'last_update': None,
+                'success': False,
+                'message': 'No APK downloads attempted yet',
+                'repository': 'Levit513/RF-Access'
+            })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def download_latest_apk_async():
+    """Background task to download latest APK with concurrency protection"""
+    # Acquire lock to prevent concurrent downloads
+    if not apk_download_lock.acquire(blocking=False):
+        print("⚠️ APK download already in progress - skipping")
+        return
+    
+    try:
+        print("🔄 Starting automatic APK download...")
+        
+        # Verify GitHub token is configured
+        github_token = os.environ.get('GITHUB_TOKEN')
+        if not github_token:
+            error_msg = "GITHUB_TOKEN not configured - cannot download APK artifacts"
+            print(f"❌ {error_msg}")
+            
+            # Create downloader just for status file
+            downloader = GitHubAPKDownloader('Levit513', 'RF-Access')
+            downloader.create_status_file(False, error_msg)
+            return
+        
+        # Initialize downloader
+        downloader = GitHubAPKDownloader('Levit513', 'RF-Access')
+        
+        # Download latest APK
+        success = downloader.update_latest_apk()
+        
+        if success:
+            print("✅ APK download completed successfully!")
+            downloader.create_status_file(True, "APK downloaded successfully via automation")
+        else:
+            print("❌ APK download failed")
+            downloader.create_status_file(False, "APK download failed - check GitHub token and repository access")
+            
+    except Exception as e:
+        print(f"💥 APK download error: {e}")
+        # Initialize downloader just for status file creation
+        try:
+            downloader = GitHubAPKDownloader('Levit513', 'RF-Access')
+            downloader.create_status_file(False, f"APK download error: {str(e)}")
+        except:
+            pass
+    finally:
+        # Always release the lock
+        apk_download_lock.release()
 
 def create_admin_user():
     """Create default admin user if none exists"""
