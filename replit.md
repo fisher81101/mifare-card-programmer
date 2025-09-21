@@ -1,10 +1,48 @@
 # Overview
 
-This is a MIFARE Card Programming System - a comprehensive web-based platform for creating, managing, and distributing MIFARE Classic card programming data. The system enables administrators to create card programs using a visual sector editor and securely distribute one-time programming links to users. Users can then access these links on Android devices to program MIFARE cards via NFC, with fallback options including a companion Android app and web-based NFC interface.
+This is a comprehensive MIFARE Card Programming System consisting of:
+1. **Flask Web Application**: Web-based platform for creating, managing, and distributing MIFARE Classic card programming data
+2. **Dual-Mode Android Application**: Production-ready Android app with separated user and admin interfaces for NFC-enabled MIFARE card programming
+
+The system enables administrators to create card programs using a visual sector editor and securely distribute programming capabilities. The Android application provides both a simplified user interface for automatic card programming and a password-protected admin interface with full functionality for educational and hotel key card encoding scenarios.
+
+## Project Status: COMPLETED ✅
+- ✅ Flask web application with complete MIFARE card management
+- ✅ Dual-mode Android application with enterprise-grade security
+- ✅ Production-ready security implementation with encrypted storage
+- ✅ Complete NFC integration for MIFARE Classic 1K/4K cards
+- ✅ Authentication system with admin/user separation
+- ✅ Automatic backend integration for seamless operation
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+# Android Application Admin Access
+
+## Security Implementation
+- **Admin Password**: Default "admin123" requires immediate change on first run to minimum 8 characters
+- **Access Method**: 7 consecutive clicks on app logo within 500ms intervals
+- **Authentication**: Password-protected with session timeout (30 minutes)
+- **Data Security**: All sensitive data encrypted with AES256 (EncryptedSharedPreferences)
+- **Network Security**: HTTPS-only for production, cleartext allowed only for local development
+
+## Admin Interface Features
+1. **Scan Tab**: Read and analyze existing MIFARE cards with detailed hex dump display
+2. **Write Tab**: Program cards with custom data and sector/block configuration
+3. **Config Tab**: Backend integration settings, user mode configuration, password management
+4. **Logs Tab**: Comprehensive admin activity logging with timestamps
+
+## User Mode Features
+- **Automatic Operation**: Simplified interface with backend-driven card programming
+- **Hidden Admin Access**: 7-click gesture on logo to reveal admin password prompt
+- **Secure Configuration**: All settings managed through encrypted admin interface
+- **Error Handling**: User-friendly error messages with admin logging
+
+## Deployment Notes
+- **Production Ready**: Complete security hardening with encrypted storage
+- **Educational Use**: Designed for controlled environments with proper disclaimers
+- **Network Configuration**: Supports both local development and HTTPS production deployment
 
 # System Architecture
 
