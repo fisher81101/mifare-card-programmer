@@ -65,7 +65,7 @@
                                    class="btn btn-outline-primary">
                                     Test Mobile Redirect with Sample Data
                                 </a>
-                                <a href="https://github.com/Levit513/RF-Access/releases/download/v1.0.0.0/app-debug.apk" 
+                                <a href="/static/downloads/app-debug.apk" 
                                    class="btn btn-outline-success" target="_blank">
                                     Direct APK Download Test
                                 </a>
@@ -95,7 +95,7 @@
             const userAgent = navigator.userAgent;
             const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
             const appUrl = 'rfaccess://open?username=debug&cardData=DEBUG_TOKEN&action=program';
-            const downloadUrl = 'https://github.com/Levit513/RF-Access/releases/download/v1.0.0.0/app-debug.apk';
+            const downloadUrl = '/static/downloads/app-debug.apk';
 
             document.getElementById('userAgentValue').textContent = userAgent;
             document.getElementById('mobileValue').textContent = isMobile ? 'Yes' : 'No';
@@ -119,7 +119,7 @@
         }
 
         function testDownload() {
-            const downloadUrl = 'https://github.com/Levit513/RF-Access/releases/download/v1.0.0.0/app-debug.apk';
+            const downloadUrl = '/static/downloads/app-debug.apk';
             const resultDiv = document.getElementById('downloadResult');
             
             resultDiv.innerHTML = '<span class="text-info">Testing download URL...</span>';
@@ -146,7 +146,7 @@ User Agent: ${navigator.userAgent}
 Mobile Detected: ${/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)}
 Current URL: ${window.location.href}
 App URL: rfaccess://open?username=debug&cardData=DEBUG_TOKEN&action=program
-Download URL: https://github.com/Levit513/RF-Access/releases/download/v1.0.0.0/app-debug.apk
+Download URL: /static/downloads/app-debug.apk
 Timestamp: ${new Date().toISOString()}
             `.trim();
 
