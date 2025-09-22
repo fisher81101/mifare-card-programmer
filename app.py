@@ -272,7 +272,8 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', 
                          programs=programs, 
                          users=users, 
-                         distributions=distributions)
+                         distributions=distributions,
+                         datetime=datetime)
 
 @app.route('/dashboard')
 @login_required
