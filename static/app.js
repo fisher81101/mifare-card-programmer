@@ -10,30 +10,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    // Check for NFC support
-    if ('NDEFReader' in window) {
-        console.log('NFC supported');
-        document.body.classList.add('nfc-supported');
-    } else {
-        console.log('NFC not supported');
-        document.body.classList.add('nfc-not-supported');
+    // Check for NFC support and update status
+    const nfcStatus = document.getElementById('nfc-status');
+    if (nfcStatus) {
+        if ('NDEFReader' in window) {
+            nfcStatus.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>NFC Supported - Ready for card programming';
+            document.body.classList.add('nfc-supported');
+        } else {
+            nfcStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>NFC Not Supported - Use Android Chrome for card programming';
+            document.body.classList.add('nfc-not-supported');
+        }
     }
-    
-    // Form detection and debugging  
-    setTimeout(function() {
-        const forms = document.querySelectorAll('form');
-        console.log(`🔧 Found ${forms.length} form(s) on page`);
-        
-        forms.forEach(function(form, index) {
-            if (form.method.toLowerCase() === 'post') {
-                console.log(`🔧 Login form detected - ready for submission`);
-                
-                form.addEventListener('submit', function(e) {
-                    console.log('🔧 Login form submitted successfully!');
-                });
-            }
-        });
-    }, 500);
     
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -46,9 +33,23 @@ function initializeApp() {
         var alerts = document.querySelectorAll('.alert-dismissible');
         alerts.forEach(function(alert) {
             var bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
+            if (bsAlert) {
+                bsAlert.close();
+            }
         });
     }, 5000);
+
+    // Handle login form submission
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
+                submitBtn.disabled = true;
+            }
+        });
+    }
 }
 
 // Utility functions
@@ -56,230 +57,208 @@ function showLoading(element, text = 'Loading...') {
     if (typeof element === 'string') {
         element = document.getElementById(element);
     }
-    element.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+    if (element) {
+        element.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">${text}</p>
             </div>
-            <p class="mt-2">${text}</p>
-        </div>
-    `;
+        `;
+    }
 }
 
 function hideLoading(element) {
     if (typeof element === 'string') {
         element = document.getElementById(element);
     }
-    element.innerHTML = '';
-}
-
-function showError(message, container = null) {
-    const errorHtml = `
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    
-    if (container) {
-        container.innerHTML = errorHtml;
-    } else {
-        // Add to top of main container
-        const main = document.querySelector('main.container');
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = errorHtml;
-        main.insertBefore(tempDiv.firstElementChild, main.firstElementChild);
+    if (element) {
+        element.innerHTML = '';
     }
 }
 
-function showSuccess(message, container = null) {
-    const successHtml = `
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
+    const container = document.querySelector('.container');
     if (container) {
-        container.innerHTML = successHtml;
-    } else {
-        // Add to top of main container
-        const main = document.querySelector('main.container');
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = successHtml;
-        main.insertBefore(tempDiv.firstElementChild, main.firstElementChild);
+        container.insertBefore(alertDiv, container.firstChild);
     }
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        const bsAlert = new bootstrap.Alert(alertDiv);
+        if (bsAlert) {
+            bsAlert.close();
+        }
+    }, 5000);
 }
 
-// Card scanning functions
-async function scanForCards() {
+// NFC Functions
+async function startNFCReading() {
+    if (!('NDEFReader' in window)) {
+        showAlert('NFC is not supported on this device. Please use an Android device with Chrome browser.', 'warning');
+        return;
+    }
+
     try {
-        const response = await fetch('/api/scan_card');
-        const data = await response.json();
-        
-        if (data.success && data.cards.length > 0) {
-            return data.cards;
-        } else {
-            throw new Error('No cards found');
-        }
+        const ndef = new NDEFReader();
+        await ndef.scan();
+        showAlert('NFC scanning started. Hold your device near a MIFARE card.', 'info');
+
+        ndef.addEventListener('reading', ({ message }) => {
+            handleNFCReading(message);
+        });
+
+        ndef.addEventListener('readingerror', () => {
+            showAlert('Error reading NFC card. Please try again.', 'danger');
+        });
+
     } catch (error) {
-        throw new Error('Failed to scan for cards: ' + error.message);
+        console.error('NFC Error:', error);
+        showAlert('Failed to start NFC scanning: ' + error.message, 'danger');
     }
 }
 
-// NFC Programming functions
-class NFCProgrammer {
-    constructor() {
-        this.reader = null;
-        this.isScanning = false;
-        this.onCardDetected = null;
-        this.onError = null;
-        this.onProgress = null;
-    }
-    
-    async initialize() {
-        if (!('NDEFReader' in window)) {
-            throw new Error('NFC not supported on this device');
+function handleNFCReading(message) {
+    try {
+        let cardData = '';
+        for (const record of message.records) {
+            if (record.recordType === 'text') {
+                const textDecoder = new TextDecoder(record.encoding);
+                cardData += textDecoder.decode(record.data);
+            }
         }
         
-        this.reader = new NDEFReader();
-        return true;
-    }
-    
-    async startScanning() {
-        if (!this.reader) {
-            await this.initialize();
+        currentCardData = cardData;
+        showAlert('Card data read successfully!', 'success');
+        
+        // Update UI with card data
+        const cardDataElement = document.getElementById('cardData');
+        if (cardDataElement) {
+            cardDataElement.textContent = cardData;
         }
         
+    } catch (error) {
+        console.error('Card reading error:', error);
+        showAlert('Error processing card data: ' + error.message, 'danger');
+    }
+}
+
+async function writeNFCCard(data) {
+    if (!('NDEFReader' in window)) {
+        showAlert('NFC is not supported on this device.', 'warning');
+        return;
+    }
+
+    if (programmingInProgress) {
+        showAlert('Programming already in progress. Please wait.', 'warning');
+        return;
+    }
+
+    try {
+        programmingInProgress = true;
+        showAlert('Hold your device near the MIFARE card to program it...', 'info');
+        
+        const ndef = new NDEFReader();
+        await ndef.write({
+            records: [{
+                recordType: 'text',
+                data: data
+            }]
+        });
+
+        showAlert('Card programmed successfully!', 'success');
+        
+    } catch (error) {
+        console.error('NFC write error:', error);
+        showAlert('Error programming card: ' + error.message, 'danger');
+    } finally {
+        programmingInProgress = false;
+    }
+}
+
+// Program card with current data
+function programCard() {
+    if (!currentCardData) {
+        showAlert('No card data available. Please select a program first.', 'warning');
+        return;
+    }
+    
+    writeNFCCard(currentCardData);
+}
+
+// Copy data to clipboard
+function copyToClipboard(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            showAlert('Copied to clipboard!', 'success');
+        }).catch(function(error) {
+            console.error('Copy error:', error);
+            showAlert('Failed to copy to clipboard', 'danger');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
         try {
-            await this.reader.scan();
-            this.isScanning = true;
-            
-            this.reader.addEventListener('reading', (event) => {
-                if (this.onCardDetected) {
-                    this.onCardDetected(event);
-                }
-            });
-            
-            this.reader.addEventListener('readingerror', (error) => {
-                if (this.onError) {
-                    this.onError(error);
-                }
-            });
-            
+            document.execCommand('copy');
+            showAlert('Copied to clipboard!', 'success');
         } catch (error) {
-            throw new Error('Failed to start NFC scanning: ' + error.message);
+            showAlert('Failed to copy to clipboard', 'danger');
         }
-    }
-    
-    async programCard(cardData, progressCallback) {
-        if (!cardData || !cardData.sector_data) {
-            throw new Error('Invalid card data');
-        }
-        
-        const sectors = Object.keys(cardData.sector_data);
-        const totalSectors = sectors.length;
-        
-        for (let i = 0; i < totalSectors; i++) {
-            const sectorNum = sectors[i];
-            const sectorData = cardData.sector_data[sectorNum];
-            
-            // Simulate programming delay
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
-            if (progressCallback) {
-                const progress = ((i + 1) / totalSectors) * 100;
-                progressCallback(progress, `Programming sector ${sectorNum}...`);
-            }
-        }
-        
-        return true;
-    }
-    
-    stopScanning() {
-        this.isScanning = false;
-        // Note: NDEFReader doesn't have a stop method, scanning stops automatically
+        document.body.removeChild(textArea);
     }
 }
 
-// Hex validation and formatting
-function validateHexString(hex, expectedLength = null) {
-    const cleanHex = hex.replace(/[^0-9A-Fa-f]/g, '');
-    
-    if (expectedLength && cleanHex.length !== expectedLength) {
-        return false;
+// Format JSON data
+function formatJSON(jsonString) {
+    try {
+        const parsed = JSON.parse(jsonString);
+        return JSON.stringify(parsed, null, 2);
+    } catch (error) {
+        return jsonString;
     }
-    
-    return /^[0-9A-Fa-f]*$/.test(cleanHex);
 }
 
-function formatHexString(hex, groupSize = 2, separator = ' ') {
-    const cleanHex = hex.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-    const groups = [];
-    
-    for (let i = 0; i < cleanHex.length; i += groupSize) {
-        groups.push(cleanHex.substr(i, groupSize));
-    }
-    
-    return groups.join(separator);
-}
-
-function padHexString(hex, length) {
-    const cleanHex = hex.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
-    return cleanHex.padEnd(length, '0');
-}
-
-// Sector data validation
-function validateSectorData(sectorData) {
-    const errors = [];
-    
-    if (!sectorData || typeof sectorData !== 'object') {
-        errors.push('Invalid sector data format');
-        return errors;
-    }
-    
-    for (const [sectorNum, sector] of Object.entries(sectorData)) {
-        if (!sector.blocks || !Array.isArray(sector.blocks)) {
-            errors.push(`Sector ${sectorNum}: Missing or invalid blocks array`);
-            continue;
+// Validate sector data
+function validateSectorData(data) {
+    try {
+        const parsed = JSON.parse(data);
+        
+        // Basic validation - should be an object or array
+        if (typeof parsed !== 'object') {
+            return { valid: false, error: 'Sector data must be a valid JSON object or array' };
         }
         
-        if (sector.blocks.length !== 4) {
-            errors.push(`Sector ${sectorNum}: Must have exactly 4 blocks`);
-        }
-        
-        for (let i = 0; i < sector.blocks.length; i++) {
-            const block = sector.blocks[i];
-            if (!validateHexString(block, 32)) {
-                errors.push(`Sector ${sectorNum}, Block ${i}: Invalid hex data (must be 32 hex characters)`);
-            }
-        }
-        
-        if (sector.keys) {
-            if (sector.keys.keyA && !validateHexString(sector.keys.keyA, 12)) {
-                errors.push(`Sector ${sectorNum}: Invalid Key A (must be 12 hex characters)`);
-            }
-            if (sector.keys.keyB && !validateHexString(sector.keys.keyB, 12)) {
-                errors.push(`Sector ${sectorNum}: Invalid Key B (must be 12 hex characters)`);
-            }
-        }
+        return { valid: true, data: parsed };
+    } catch (error) {
+        return { valid: false, error: 'Invalid JSON format: ' + error.message };
     }
-    
-    return errors;
 }
 
-// Export functions for global access
-window.MifareApp = {
-    scanForCards,
-    NFCProgrammer,
-    validateHexString,
-    formatHexString,
-    padHexString,
-    validateSectorData,
-    showLoading,
-    hideLoading,
-    showError,
-    showSuccess
-};
+// Mobile app detection and redirection
+function detectMobileAndRedirect() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    const isAndroid = /android/.test(userAgent);
+    
+    if (isMobile && !isAndroid) {
+        showAlert('For MIFARE card programming, please use an Android device with NFC capability.', 'info');
+    }
+    
+    return { isMobile, isAndroid };
+}
+
+// Initialize mobile detection on load
+document.addEventListener('DOMContentLoaded', function() {
+    detectMobileAndRedirect();
+});

@@ -5,25 +5,10 @@
     <div class="col-lg-8 mx-auto">
         <div class="text-center mb-5">
             <h1 class="display-4 text-primary">
-                🚨 CACHE TEST - REFRESH NOW! 🚨
                 <i class="fas fa-credit-card me-3"></i>
                 MIFARE Card Programming System
             </h1>
             <p class="lead">Secure MIFARE card programming and distribution platform</p>
-            
-            <!-- LOGIN TEST BUTTON -->
-            <div class="alert alert-info mt-4 p-4">
-                <h4 class="alert-heading">🔧 Testing Login Access</h4>
-                <p class="mb-3">Click this button to test login page access:</p>
-                <a href="/login" class="btn btn-primary btn-lg">
-                    <i class="fas fa-sign-in-alt me-2"></i>Test Login Page Access
-                </a>
-                <hr>
-                <p class="mb-0 small">
-                    Default credentials: <strong>admin</strong> / <strong>admin123</strong><br>
-                    If you see console message "Found 1 form(s)", the login is working!
-                </p>
-            </div>
         </div>
 
         <div class="row g-4">
@@ -74,35 +59,42 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 text-center mb-3">
-                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                <span class="h4 mb-0">1</span>
+                            <div class="mb-3">
+                                <i class="fas fa-plus-circle fa-2x text-primary"></i>
                             </div>
-                            <h6 class="mt-2">Create Program</h6>
-                            <small class="text-muted">Admin creates MIFARE card programming with sector data</small>
+                            <h6>1. Create Programs</h6>
+                            <p class="small text-muted">Administrators create MIFARE card programming configurations with custom sector data.</p>
                         </div>
                         <div class="col-md-4 text-center mb-3">
-                            <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                <span class="h4 mb-0">2</span>
+                            <div class="mb-3">
+                                <i class="fas fa-share-alt fa-2x text-warning"></i>
                             </div>
-                            <h6 class="mt-2">Distribute</h6>
-                            <small class="text-muted">Send secure programming link to registered users</small>
+                            <h6>2. Distribute Links</h6>
+                            <p class="small text-muted">Secure, time-limited links are generated and shared with authorized users.</p>
                         </div>
                         <div class="col-md-4 text-center mb-3">
-                            <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                <span class="h4 mb-0">3</span>
+                            <div class="mb-3">
+                                <i class="fas fa-wifi fa-2x text-success"></i>
                             </div>
-                            <h6 class="mt-2">Program Card</h6>
-                            <small class="text-muted">User taps Android phone to MIFARE card for one-time programming</small>
+                            <h6>3. Program Cards</h6>
+                            <p class="small text-muted">Users tap their NFC-enabled Android device to MIFARE cards for instant programming.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="mt-4 text-center">
-            <div class="alert alert-info">
-                <i class="fas fa-shield-alt me-2"></i>
-                <strong>Secure:</strong> All programming data is encrypted and uses one-time access tokens for maximum security.
+        <div class="mt-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="fas fa-mobile-alt me-2"></i>NFC Requirements</h6>
+                    <p class="card-text small mb-2">
+                        <strong>Supported Devices:</strong> Android phones with NFC capability<br>
+                        <strong>Supported Cards:</strong> MIFARE Classic 1K/4K<br>
+                        <strong>Browser:</strong> Chrome or NFC-compatible browser
+                    </p>
+                    <div id="nfc-status" class="small"></div>
+                </div>
             </div>
         </div>
     </div>
