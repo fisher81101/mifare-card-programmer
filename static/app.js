@@ -19,30 +19,21 @@ function initializeApp() {
         document.body.classList.add('nfc-not-supported');
     }
     
-    // Fix form detection with better timing and selectors
+    // Form detection and debugging  
     setTimeout(function() {
         const forms = document.querySelectorAll('form');
         console.log(`🔧 Found ${forms.length} form(s) on page`);
         
         forms.forEach(function(form, index) {
-            console.log(`🔧 Form ${index}: method="${form.method}", action="${form.action}"`);
-            
             if (form.method.toLowerCase() === 'post') {
-                console.log('🔧 Adding submit listener to POST form');
+                console.log(`🔧 Login form detected - ready for submission`);
                 
                 form.addEventListener('submit', function(e) {
-                    console.log('🔧 Form submission intercepted!');
-                    console.log('🔧 Target URL:', form.action || window.location.href);
-                    
-                    const formData = new FormData(form);
-                    console.log('🔧 Form data being submitted:');
-                    for (let [key, value] of formData.entries()) {
-                        console.log(`  ${key}: ${key.includes('password') ? '***' : value}`);
-                    }
+                    console.log('🔧 Login form submitted successfully!');
                 });
             }
         });
-    }, 500); // Wait 500ms for all content to load
+    }, 500);
     
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
