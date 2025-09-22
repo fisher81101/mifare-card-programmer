@@ -1,2 +1,2 @@
-# Railway custom subdomain redirects for programmer.513solutions.com
-/* https://mifare-card-programmer-production.up.railway.app/:splat 200
+# Replit custom domain configuration for app.513solutions.com
+# Remove old Railway redirects - app now runs directly on Replit
