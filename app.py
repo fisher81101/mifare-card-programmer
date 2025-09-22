@@ -160,35 +160,6 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Routes
-@app.route('/test_form')
-def test_form():
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head><title>Form Test</title></head>
-    <body>
-        <h1>Simple Form Test</h1>
-        <form method="POST" action="/test_form">
-            <input type="text" name="test" placeholder="Type 'test'" required>
-            <button type="submit">Test Submit</button>
-        </form>
-        <script>
-            const form = document.querySelector('form');
-            if (form) {
-                console.log('🔧 Test form found');
-                form.addEventListener('submit', function(e) {
-                    console.log('🔧 Test form submitted!');
-                });
-            }
-        </script>
-    </body>
-    </html>
-    '''
-
-@app.route('/test_form', methods=['POST'])
-def test_form_post():
-    print("🔧 TEST FORM POST RECEIVED!")
-    return "Form submission works!"
 
 @app.route('/')
 def index():

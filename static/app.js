@@ -19,23 +19,30 @@ function initializeApp() {
         document.body.classList.add('nfc-not-supported');
     }
     
-    // Add form debugging for login issues
-    const loginForm = document.querySelector('form[method="POST"]');
-    if (loginForm) {
-        console.log('🔧 Login form found, adding debug listeners');
+    // Fix form detection with better timing and selectors
+    setTimeout(function() {
+        const forms = document.querySelectorAll('form');
+        console.log(`🔧 Found ${forms.length} form(s) on page`);
         
-        loginForm.addEventListener('submit', function(e) {
-            console.log('🔧 Form submit event triggered');
-            console.log('🔧 Form action:', loginForm.action);
-            console.log('🔧 Form method:', loginForm.method);
+        forms.forEach(function(form, index) {
+            console.log(`🔧 Form ${index}: method="${form.method}", action="${form.action}"`);
             
-            const formData = new FormData(loginForm);
-            console.log('🔧 Form data:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}: ${key === 'password' ? '***' : value}`);
+            if (form.method.toLowerCase() === 'post') {
+                console.log('🔧 Adding submit listener to POST form');
+                
+                form.addEventListener('submit', function(e) {
+                    console.log('🔧 Form submission intercepted!');
+                    console.log('🔧 Target URL:', form.action || window.location.href);
+                    
+                    const formData = new FormData(form);
+                    console.log('🔧 Form data being submitted:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`  ${key}: ${key.includes('password') ? '***' : value}`);
+                    }
+                });
             }
         });
-    }
+    }, 500); // Wait 500ms for all content to load
     
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
