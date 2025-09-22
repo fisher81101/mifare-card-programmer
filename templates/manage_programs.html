@@ -48,9 +48,9 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('redistribute_program', program_id=program.id) }}" 
-                                               class="btn btn-sm btn-success" title="Redistribute Program">
-                                                <i class="fas fa-share"></i> Redistribute
+                                            <a href="{{ url_for('distribute') }}" 
+                                               class="btn btn-sm btn-success" title="Distribute Program">
+                                                <i class="fas fa-share"></i> Distribute
                                             </a>
                                             <button class="btn btn-sm btn-info" 
                                                     onclick="viewProgramDetails({{ program.id }})" 
