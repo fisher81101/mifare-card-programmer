@@ -26,7 +26,12 @@
                     <div class="mb-3">
                         {{ form.sector_data.label(class="form-label") }}
                         {{ form.sector_data(class="form-control font-monospace", rows="10", placeholder='{"0": {"blocks": ["...", "...", "...", "..."], "keys": {"keyA": "FFFFFFFFFFFF", "keyB": "FFFFFFFFFFFF"}}}') }}
-                        <small class="text-muted">Enter sector data in JSON format</small>
+                        <small class="text-muted">
+                            Enter sector data in JSON format or use the 
+                            <a href="{{ url_for('sector_editor') }}" class="text-decoration-none">
+                                <i class="fas fa-edit me-1"></i>Sector Editor
+                            </a> for visual editing
+                        </small>
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">

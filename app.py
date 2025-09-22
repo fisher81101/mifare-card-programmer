@@ -181,11 +181,8 @@ def login():
         return redirect(url_for('index'))
     
     form = LoginForm()
-    logger.debug(f"🔐 Login route accessed - Method: {request.method}")
-    logger.debug(f"🔐 Request URL: {request.url}")
     
     if request.method == 'POST':
-        logger.debug(f"🔐 Processing POST to /login: {dict(request.form)}")
         
         if form.validate_on_submit():
             username = form.username.data
@@ -290,6 +287,13 @@ def create_program():
         return redirect(url_for('index'))
     
     form = CardProgramForm()
+    
+    # Pre-populate with sector data from session if available
+    if 'sector_data' in session and request.method == 'GET':
+        form.sector_data.data = session['sector_data']
+        session.pop('sector_data', None)  # Remove after use
+        flash('Sector data loaded from editor!', 'info')
+    
     if form.validate_on_submit():
         try:
             # Validate JSON
@@ -309,6 +313,51 @@ def create_program():
             flash('Invalid JSON format in sector data', 'danger')
     
     return render_template('create_program.html', form=form)
+
+@app.route('/sector_editor', methods=['GET', 'POST'])
+@login_required
+def sector_editor():
+    if not current_user.is_admin:
+        flash('Access denied. Administrator privileges required.', 'danger')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        try:
+            # Process sector data from form
+            card_type = request.form.get('card_type', '1K')
+            sector_data = {}
+            
+            # Parse sector data from form
+            max_sectors = 16 if card_type == '1K' else 40
+            
+            for sector in range(max_sectors):
+                sector_data[str(sector)] = {
+                    'blocks': [],
+                    'keys': {
+                        'keyA': request.form.get(f'sector_{sector}_keyA', 'FFFFFFFFFFFF'),
+                        'keyB': request.form.get(f'sector_{sector}_keyB', 'FFFFFFFFFFFF')
+                    }
+                }
+                
+                # Get blocks for this sector
+                blocks_per_sector = 4 if sector < 32 else 16
+                for block in range(blocks_per_sector):
+                    block_data = request.form.get(f'sector_{sector}_block_{block}', '00' * 16)
+                    # Validate hex data
+                    if len(block_data.replace(' ', '')) == 32:
+                        sector_data[str(sector)]['blocks'].append(block_data)
+                    else:
+                        sector_data[str(sector)]['blocks'].append('00' * 16)
+            
+            # Save as JSON and redirect to create program
+            session['sector_data'] = json.dumps(sector_data)
+            flash('Sector data configured successfully! Fill in program details.', 'success')
+            return redirect(url_for('create_program'))
+            
+        except Exception as e:
+            flash(f'Error processing sector data: {str(e)}', 'danger')
+    
+    return render_template('sector_editor.html')
 
 @app.route('/distribute', methods=['GET', 'POST'])
 @login_required
