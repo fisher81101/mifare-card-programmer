@@ -19,6 +19,24 @@ function initializeApp() {
         document.body.classList.add('nfc-not-supported');
     }
     
+    // Add form debugging for login issues
+    const loginForm = document.querySelector('form[method="POST"]');
+    if (loginForm) {
+        console.log('🔧 Login form found, adding debug listeners');
+        
+        loginForm.addEventListener('submit', function(e) {
+            console.log('🔧 Form submit event triggered');
+            console.log('🔧 Form action:', loginForm.action);
+            console.log('🔧 Form method:', loginForm.method);
+            
+            const formData = new FormData(loginForm);
+            console.log('🔧 Form data:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${key === 'password' ? '***' : value}`);
+            }
+        });
+    }
+    
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
