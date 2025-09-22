@@ -23,6 +23,7 @@ import secrets
 import hmac
 import hashlib
 import jwt
+import logging
 from mifare import CardReader, MifareUtils
 from github_automation import GitHubAPKDownloader
 import threading
@@ -31,6 +32,10 @@ import threading
 apk_download_lock = threading.Lock()
 
 app = Flask(__name__)
+
+# Set up comprehensive logging as per troubleshooting guide
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Configure for subdirectory deployment at /app
 app.config['APPLICATION_ROOT'] = '/app'
@@ -76,6 +81,29 @@ CORS(app, origins=['https://app.513solutions.com', 'https://*.replit.dev'],
      allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
      supports_credentials=True)
+
+# Log all incoming requests as per troubleshooting guide
+@app.before_request
+def log_request():
+    logger.debug(f"Request: {request.method} {request.url}")
+    logger.debug(f"Headers: {dict(request.headers)}")
+    logger.debug(f"Origin: {request.headers.get('Origin', 'No Origin')}")
+    logger.debug(f"Referer: {request.headers.get('Referer', 'No Referer')}")
+    if request.method == 'POST':
+        logger.debug(f"POST Body: {request.get_data()}")
+        logger.debug(f"Form Data: {dict(request.form)}")
+
+# Handle CORS preflight requests explicitly
+@app.route('/login', methods=['OPTIONS'])
+def handle_login_options():
+    logger.debug("Handling CORS preflight request for /login")
+    response = app.make_default_options_response()
+    headers = response.headers
+    headers['Access-Control-Allow-Origin'] = 'https://app.513solutions.com'
+    headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 # Database Models
 class User(UserMixin, db.Model):
@@ -143,10 +171,18 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    print(f"Form validation errors: {form.errors}")
-    print(f"Request method: {request.method}")
+    logger.debug(f"Login route accessed - Method: {request.method}")
+    logger.debug(f"Form validation errors: {form.errors}")
+    
     if request.method == 'POST':
-        print(f"POST data received: {request.form}")
+        logger.debug("Processing POST request to /login")
+        logger.debug(f"POST data received: {dict(request.form)}")
+        logger.debug(f"CSRF Token from form: {request.form.get('csrf_token', 'No CSRF token')}")
+        
+        username = request.form.get('username')
+        password = request.form.get('password')
+        logger.debug(f"Received credentials: username={username}, password={'*' * len(password) if password else 'None'}")
+    
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         print(f"Login attempt for user: {form.username.data}")
