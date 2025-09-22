@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}{{ program.name }} - Program Access{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Program Details -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-credit-card me-2"></i>{{ program.name }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Program Information</h6>
+                        <p><strong>Name:</strong> {{ program.name }}</p>
+                        {% if program.description %}
+                        <p><strong>Description:</strong> {{ program.description }}</p>
+                        {% endif %}
+                        <p><strong>Created:</strong> {{ program.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Access Information</h6>
+                        <p><strong>Distributed:</strong> {{ distribution.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>Expires:</strong> {{ distribution.expires_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if distribution.is_used %}
+                                <span class="badge bg-success">Used</span>
+                            {% else %}
+                                <span class="badge bg-warning">Available</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Programming Options -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5><i class="fas fa-tools me-2"></i>Programming Options</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Web NFC Programming -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-globe fa-3x text-info mb-3"></i>
+                                <h5>Web NFC Programming</h5>
+                                <p class="text-muted">Program cards directly from your browser using Web NFC API (Android Chrome only)</p>
+                                <button class="btn btn-info" onclick="startWebNFC()">
+                                    <i class="fas fa-wifi me-2"></i>Start Programming
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Android App -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-mobile-alt fa-3x text-success mb-3"></i>
+                                <h5>Android App</h5>
+                                <p class="text-muted">Download our companion app for full MIFARE Classic programming support</p>
+                                <button class="btn btn-success" onclick="downloadApp()">
+                                    <i class="fas fa-download me-2"></i>Download APK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sector Data Preview -->
+                <div class="mt-4">
+                    <h6>Sector Data Preview</h6>
+                    <div class="bg-light p-3 rounded">
+                        <pre id="sectorData" class="mb-0" style="max-height: 300px; overflow-y: auto;">{{ program.sector_data }}</pre>
+                    </div>
+                    <div class="mt-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copySectorData()">
+                            <i class="fas fa-copy me-1"></i>Copy Data
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="downloadJson()">
+                            <i class="fas fa-download me-1"></i>Download JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Instructions -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Web NFC (Recommended)</h6>
+                        <ol class="small">
+                            <li>Use Android device with Chrome browser</li>
+                            <li>Enable NFC in device settings</li>
+                            <li>Click "Start Programming"</li>
+                            <li>Place MIFARE card on NFC reader</li>
+                            <li>Follow on-screen instructions</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Android App (Full Features)</h6>
+                        <ol class="small">
+                            <li>Download and install APK</li>
+                            <li>Open app and enter this URL</li>
+                            <li>App will download program data</li>
+                            <li>Use admin mode for advanced features</li>
+                            <li>Program cards with full sector access</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<div id="hiddenData" style="display: none;">
+    <input type="hidden" id="programData" value="{{ program.sector_data|e }}">
+    <input type="hidden" id="programName" value="{{ program.name|e }}">
+    <input type="hidden" id="accessToken" value="{{ distribution.access_token }}">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let programData = null;
+
+// Initialize program data
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const dataElement = document.getElementById('programData');
+        programData = JSON.parse(dataElement.value);
+        formatSectorData();
+    } catch (e) {
+        console.error('Error parsing program data:', e);
+    }
+});
+
+function formatSectorData() {
+    const preElement = document.getElementById('sectorData');
+    if (programData) {
+        preElement.textContent = JSON.stringify(programData, null, 2);
+    }
+}
+
+function copySectorData() {
+    const data = document.getElementById('programData').value;
+    navigator.clipboard.writeText(data).then(() => {
+        alert('Sector data copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('Failed to copy data. Please select and copy manually.');
+    });
+}
+
+function downloadJson() {
+    const data = document.getElementById('programData').value;
+    const programName = document.getElementById('programName').value;
+    
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${programName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_program.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+async function startWebNFC() {
+    if ('NDEFReader' in window) {
+        try {
+            const ndef = new NDEFReader();
+            
+            // Show programming interface
+            showProgrammingModal();
+            
+            // Start scanning for cards
+            await ndef.scan();
+            console.log('NFC scan started');
+            
+            ndef.addEventListener('reading', ({ message, serialNumber }) => {
+                console.log(`Card detected: ${serialNumber}`);
+                handleCardDetected(serialNumber);
+            });
+            
+        } catch (error) {
+            console.error('NFC Error:', error);
+            alert('NFC not available. Please use the Android app or check your device settings.');
+        }
+    } else {
+        alert('Web NFC not supported. Please use Android Chrome browser or download our Android app.');
+    }
+}
+
+function showProgrammingModal() {
+    // Create a simple modal for NFC programming feedback
+    const modal = document.createElement('div');
+    modal.className = 'modal fade show';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">NFC Programming Active</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-wifi fa-3x text-primary mb-3"></i>
+                        <h5>Place MIFARE card on NFC reader</h5>
+                        <p class="text-muted">Scanning for cards...</p>
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function handleCardDetected(serialNumber) {
+    alert(`MIFARE card detected!\nSerial: ${serialNumber}\n\nNote: Web NFC has limitations for MIFARE Classic programming. For full functionality, please use our Android app.`);
+}
+
+function downloadApp() {
+    // In a real implementation, this would download the actual APK
+    const appUrl = '/static/mifare-programmer.apk'; // Placeholder
+    
+    alert('Android App Download\n\nThe companion app provides full MIFARE Classic programming capabilities including:\n\n• Raw sector/block access\n• Key authentication\n• Advanced debugging\n• Offline operation\n\nWould you like to proceed with download?');
+    
+    // For now, show instructions
+    showAppInstructions();
+}
+
+function showAppInstructions() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade show';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Android App Setup</h5>
+                    <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Setup Instructions:</h6>
+                    <ol>
+                        <li><strong>Enable Unknown Sources:</strong> Go to Settings > Security > Install unknown apps</li>
+                        <li><strong>Download APK:</strong> Save the app file to your device</li>
+                        <li><strong>Install App:</strong> Open the downloaded APK file</li>
+                        <li><strong>Configure:</strong> Enter this program URL in the app settings</li>
+                    </ol>
+                    
+                    <div class="mt-3">
+                        <h6>Program Access URL:</h6>
+                        <div class="bg-light p-2 rounded font-monospace small">
+                            ${window.location.href}
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyUrl()">
+                            <i class="fas fa-copy me-1"></i>Copy URL
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function copyUrl() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Program URL copied to clipboard!');
+    });
+}
+
+// Mark program as used when accessing
+fetch(`/api/mark-used/${document.getElementById('accessToken').value}`, { method: 'POST' })
+    .catch(err => console.log('Could not mark as used:', err));
+</script>
+{% endblock %}
