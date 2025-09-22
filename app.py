@@ -34,8 +34,9 @@ apk_download_lock = threading.Lock()
 app = Flask(__name__)
 
 # Set up comprehensive logging as per troubleshooting guide
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+print("🔧 Enhanced logging initialized!")
 
 # Configure for subdirectory deployment at /app
 app.config['APPLICATION_ROOT'] = '/app'
@@ -85,13 +86,13 @@ CORS(app, origins=['https://app.513solutions.com', 'https://*.replit.dev'],
 # Log all incoming requests as per troubleshooting guide
 @app.before_request
 def log_request():
-    logger.debug(f"Request: {request.method} {request.url}")
-    logger.debug(f"Headers: {dict(request.headers)}")
-    logger.debug(f"Origin: {request.headers.get('Origin', 'No Origin')}")
-    logger.debug(f"Referer: {request.headers.get('Referer', 'No Referer')}")
+    print(f"🌐 Request: {request.method} {request.url}")
+    print(f"🌐 Headers: {dict(request.headers)}")
+    print(f"🌐 Origin: {request.headers.get('Origin', 'No Origin')}")
+    print(f"🌐 Referer: {request.headers.get('Referer', 'No Referer')}")
     if request.method == 'POST':
-        logger.debug(f"POST Body: {request.get_data()}")
-        logger.debug(f"Form Data: {dict(request.form)}")
+        print(f"🌐 POST Body: {request.get_data()}")
+        print(f"🌐 Form Data: {dict(request.form)}")
 
 # Handle CORS preflight requests explicitly
 @app.route('/login', methods=['OPTIONS'])
