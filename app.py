@@ -181,7 +181,11 @@ def login():
         return redirect(url_for('index'))
     
     form = LoginForm()
+    logger.debug(f"🔐 Login route accessed - Method: {request.method}")
+    logger.debug(f"🔐 Request URL: {request.url}")
+    
     if request.method == 'POST':
+        logger.debug(f"🔐 Processing POST to /login: {dict(request.form)}")
         
         if form.validate_on_submit():
             username = form.username.data
