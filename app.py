@@ -94,9 +94,10 @@ class ProgramDistribution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     program_id = db.Column(db.Integer, db.ForeignKey('card_program.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    token = db.Column(db.String(255), unique=True, nullable=False)
+    access_token = db.Column(db.String(200), unique=True, nullable=False)  # Match database column name
     expires_at = db.Column(db.DateTime, nullable=False)
-    used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime)  # Match database column name
+    is_used = db.Column(db.Boolean, default=False)  # Match database column name  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Forms
@@ -360,13 +361,13 @@ def distribute():
     form.user_id.choices = [(u.id, u.username) for u in User.query.filter_by(is_admin=False).all()]
     
     if form.validate_on_submit():
-        token = secrets.token_urlsafe(32)
+        access_token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() + timedelta(hours=24)
         
         distribution = ProgramDistribution(
             program_id=form.program_id.data,
             user_id=form.user_id.data,
-            token=token,
+            access_token=access_token,
             expires_at=expires_at
         )
         db.session.add(distribution)
@@ -378,7 +379,7 @@ def distribute():
 
 @app.route('/program/<token>')
 def program_access(token):
-    distribution = ProgramDistribution.query.filter_by(token=token).first_or_404()
+    distribution = ProgramDistribution.query.filter_by(access_token=token).first_or_404()
     
     if distribution.expires_at < datetime.utcnow():
         flash('This link has expired', 'danger')
