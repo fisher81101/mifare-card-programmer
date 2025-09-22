@@ -9,6 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from flask_cors import CORS
+from urllib.parse import urlparse
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, TextAreaField, SelectField, HiddenField
 from wtforms.validators import DataRequired, Email, Length
@@ -71,7 +72,10 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-CORS(app)
+CORS(app, origins=['https://app.513solutions.com', 'https://*.replit.dev'], 
+     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     supports_credentials=True)
 
 # Database Models
 class User(UserMixin, db.Model):
@@ -139,6 +143,10 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+    print(f"Form validation errors: {form.errors}")
+    print(f"Request method: {request.method}")
+    if request.method == 'POST':
+        print(f"POST data received: {request.form}")
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         print(f"Login attempt for user: {form.username.data}")
