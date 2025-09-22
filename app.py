@@ -99,6 +99,10 @@ class ProgramDistribution(db.Model):
     used_at = db.Column(db.DateTime)  # Match database column name
     is_used = db.Column(db.Boolean, default=False)  # Match database column name  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    program = db.relationship('CardProgram', backref='distributions')
+    user = db.relationship('User', backref='distributions')
 
 # Forms
 class LoginForm(FlaskForm):
