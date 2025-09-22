@@ -176,47 +176,86 @@ def index():
 @retry_db_operation()
 def login():
     if current_user.is_authenticated:
+        logger.debug("User already authenticated, redirecting to index")
         return redirect(url_for('index'))
     
     form = LoginForm()
-    logger.debug(f"Login route accessed - Method: {request.method}")
+    logger.debug(f"🔐 Login route accessed - Method: {request.method}")
     
     if request.method == 'POST':
-        logger.debug(f"Processing POST to /login: {dict(request.form)}")
+        logger.debug(f"🔐 Processing POST to /login: {dict(request.form)}")
         
-        if form.validate_on_submit():
-            username = form.username.data
-            password = form.password.data
-            
-            try:
-                # First try SQLAlchemy
-                user = User.query.filter_by(username=username).first()
-            except Exception as e:
-                logger.warning(f"SQLAlchemy query failed: {e}. Trying direct query...")
-                # Fallback to direct psycopg2 query
-                user_data = query_user_direct(username)
-                if user_data:
-                    # Create a temporary User object
-                    user = User()
-                    user.id = user_data['id']
-                    user.username = user_data['username']
-                    user.email = user_data['email'] 
-                    user.password_hash = user_data['password_hash']
-                    user.is_admin = user_data['is_admin']
-                else:
-                    user = None
-            
-            if user and check_password_hash(user.password_hash, password):
-                logger.debug(f"Login successful for user: {username}")
-                login_user(user)
-                next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('index'))
+        # Debug CSRF token validation
+        logger.debug(f"🔐 Form CSRF token: {form.csrf_token.data}")
+        logger.debug(f"🔐 Request CSRF token: {request.form.get('csrf_token')}")
+        
+        # Check form validation step by step
+        logger.debug(f"🔐 Form validation attempt...")
+        form_valid = form.validate_on_submit()
+        logger.debug(f"🔐 Form validation result: {form_valid}")
+        
+        if not form_valid:
+            logger.error(f"🔐 Form validation FAILED! Errors: {form.errors}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    logger.error(f"🔐 Field '{field}': {error}")
+                    flash(f'{field}: {error}', 'danger')
+            return render_template('login.html', form=form)
+        
+        # Form validation passed
+        username = form.username.data
+        password = form.password.data
+        logger.debug(f"🔐 Form validation PASSED. Username: {username}")
+        
+        # Try to find user
+        logger.debug(f"🔐 Searching for user: {username}")
+        user = None
+        try:
+            # First try SQLAlchemy
+            logger.debug("🔐 Trying SQLAlchemy query...")
+            user = User.query.filter_by(username=username).first()
+            logger.debug(f"🔐 SQLAlchemy result: {user}")
+        except Exception as e:
+            logger.warning(f"🔐 SQLAlchemy query failed: {e}. Trying direct query...")
+            # Fallback to direct psycopg2 query
+            user_data = query_user_direct(username)
+            if user_data:
+                logger.debug(f"🔐 Direct query successful: {user_data['username']}")
+                # Create a temporary User object
+                user = User()
+                user.id = user_data['id']
+                user.username = user_data['username']
+                user.email = user_data['email'] 
+                user.password_hash = user_data['password_hash']
+                user.is_admin = user_data['is_admin']
             else:
-                logger.debug(f"Login failed for user: {username}")
-                flash('Invalid username or password', 'danger')
+                logger.debug("🔐 Direct query returned None")
+                user = None
+        
+        if not user:
+            logger.error(f"🔐 User '{username}' not found in database!")
+            flash('Invalid username or password', 'danger')
+            return render_template('login.html', form=form)
+        
+        # User found, check password
+        logger.debug(f"🔐 User found: {user.username}. Checking password...")
+        logger.debug(f"🔐 Password hash preview: {user.password_hash[:30]}...")
+        
+        password_valid = check_password_hash(user.password_hash, password)
+        logger.debug(f"🔐 Password check result: {password_valid}")
+        
+        if password_valid:
+            logger.info(f"🔐 ✅ LOGIN SUCCESSFUL for user: {username}")
+            login_user(user)
+            logger.debug(f"🔐 User logged in, is_authenticated: {current_user.is_authenticated}")
+            logger.debug(f"🔐 Redirecting to index...")
+            next_page = request.args.get('next')
+            redirect_url = next_page if next_page else url_for('index')
+            logger.debug(f"🔐 Redirect URL: {redirect_url}")
+            return redirect(redirect_url)
         else:
-            logger.debug(f"Form validation failed: {form.errors}")
-            flash('Please check your input', 'danger')
+            logger.error(f"🔐 ❌ Password verification failed for user: {username}")
+            flash('Invalid username or password', 'danger')
     
     return render_template('login.html', form=form)
 
