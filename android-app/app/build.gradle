@@ -17,10 +17,22 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            if (project.hasProperty("MIFARE_RELEASE_STORE_FILE")) {
+                storeFile file(MIFARE_RELEASE_STORE_FILE)
+                storePassword MIFARE_RELEASE_STORE_PASSWORD
+                keyAlias MIFARE_RELEASE_KEY_ALIAS
+                keyPassword MIFARE_RELEASE_KEY_PASSWORD
+            }
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     

@@ -2,6 +2,7 @@ package com.mifare.encoder.utils
 
 import android.util.Log
 import com.google.gson.Gson
+import com.mifare.encoder.BuildConfig
 import com.mifare.encoder.models.ApiResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,6 +10,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.net.URL
 import java.util.concurrent.TimeUnit
 
 class ApiClient(private val baseUrl: String, private val apiKey: String) {
@@ -17,6 +19,7 @@ class ApiClient(private val baseUrl: String, private val apiKey: String) {
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        .certificatePinner(getCertificatePinner())
         .build()
     
     private val gson = Gson()
@@ -24,6 +27,31 @@ class ApiClient(private val baseUrl: String, private val apiKey: String) {
     companion object {
         private const val TAG = "ApiClient"
         private val JSON = "application/json; charset=utf-8".toMediaType()
+    }
+    
+    /**
+     * Create certificate pinner for enhanced security
+     * Production domains should have their actual certificate pins
+     */
+    private fun getCertificatePinner(): CertificatePinner {
+        val builder = CertificatePinner.Builder()
+        
+        try {
+            val host = URL(baseUrl).host
+            
+            // Certificate pinning infrastructure ready for production
+            // TODO: Enable for production with actual certificate pins
+            // To get pins: openssl s_client -connect domain:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+            
+            // Certificate pinning temporarily disabled to prevent production breakage
+            // Enable only after obtaining real SPKI SHA-256 pins for actual hostnames
+            Log.d(TAG, "Certificate pinning infrastructure ready for host: $host")
+            Log.d(TAG, "Production pinning disabled until real pins are configured")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error configuring certificate pinning", e)
+        }
+        
+        return builder.build()
     }
     
     /**
@@ -121,7 +149,7 @@ class ApiClient(private val baseUrl: String, private val apiKey: String) {
                 val data = mapOf(
                     "userId" to userId,
                     "cardUid" to cardUid,
-                    "success" to success.toString(),
+                    "success" to success,
                     "errorMessage" to (errorMessage ?: ""),
                     "timestamp" to System.currentTimeMillis().toString()
                 )
