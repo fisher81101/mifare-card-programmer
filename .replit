@@ -1,8 +1,8 @@
-modules = ["web", "nodejs-20", "python-3.11", "postgresql-16"]
+modules = ["web", "nodejs-20", "python-3.11", "postgresql-16", "java", "java-graalvm22.3"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "freetype", "gmp", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "rustc", "tcl", "tk", "zlib"]
+packages = ["cargo", "freetype", "gmp", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "rustc", "tcl", "tk", "zlib", "android-tools"]
 
 [agent]
 expertMode = true
@@ -62,6 +62,10 @@ externalPort = 3002
 [[ports]]
 localPort = 43359
 externalPort = 5173
+
+[[ports]]
+localPort = 43747
+externalPort = 6800
 
 [[ports]]
 localPort = 46171
