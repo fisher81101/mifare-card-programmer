@@ -690,7 +690,7 @@ def favicon():
 def apk_download_page():
     """APK download page"""
     try:
-        apk_path = os.path.join('static', 'app-final-signed.apk')
+        apk_path = os.path.join('static', 'app-modern-signed.apk')
         if os.path.exists(apk_path):
             apk_size = round(os.path.getsize(apk_path) / (1024*1024), 1)
             apk_exists = True
@@ -715,7 +715,7 @@ def apk_download_page():
 def download_apk():
     """Direct APK download"""
     try:
-        apk_path = os.path.join('static', 'app-final-signed.apk')
+        apk_path = os.path.join('static', 'app-modern-signed.apk')
         if os.path.exists(apk_path):
             return send_file(
                 apk_path,
