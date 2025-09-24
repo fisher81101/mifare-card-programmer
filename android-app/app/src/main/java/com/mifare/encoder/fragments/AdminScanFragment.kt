@@ -197,6 +197,7 @@ class AdminScanFragment : Fragment() {
                 cardType = cardType,
                 timestamp = System.currentTimeMillis(),
                 sectorData = sectorData,
+                sectors = sectorData.values.toList(), // Populate sectors list for adapter
                 saltoData = saltoAnalysis,
                 rawHexData = rawHexData.toString()
             )
