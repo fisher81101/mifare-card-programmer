@@ -721,7 +721,9 @@ def download_apk():
                 apk_path,
                 as_attachment=True,
                 download_name='mifare-app-v1.1.apk',
-                mimetype='application/vnd.android.package-archive'
+                mimetype='application/vnd.android.package-archive',
+                max_age=0,  # Disable caching
+                conditional=False  # Disable range requests to prevent HTTP 206
             )
         else:
             return jsonify({'error': 'APK file not found'}), 404
