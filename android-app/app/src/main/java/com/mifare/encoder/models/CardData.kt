@@ -2,16 +2,19 @@ package com.mifare.encoder.models
 
 data class CardData(
     var uid: String = "",
-    var type: String = "",
+    var cardType: String = "",
     var size: String = "",
     var sectors: List<String> = emptyList(),
-    var saltoData: SaltoData? = null
+    var saltoData: SaltoData? = null,
+    var timestamp: Long = System.currentTimeMillis(),
+    var rawHexData: String = ""
 )
 
 data class SaltoData(
     var userId: String = "",
     var accessRights: List<String> = emptyList(),
     var doorList: List<String> = emptyList(),
+    var accessDoors: List<String>? = null,
     var startTimestamp: String = "",
     var endTimestamp: String = "",
     var checksum: String = "",
@@ -35,34 +38,3 @@ data class RemoteConfig(
     var lastSync: String = ""
 )
 
-data class ApiResponse(
-    var success: Boolean = false,
-    var message: String = "",
-    var data: ByteArray? = null,
-    var cardData: String = ""
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as ApiResponse
-
-        if (success != other.success) return false
-        if (message != other.message) return false
-        if (data != null) {
-            if (other.data == null) return false
-            if (!data.contentEquals(other.data)) return false
-        } else if (other.data != null) return false
-        if (cardData != other.cardData) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = success.hashCode()
-        result = 31 * result + message.hashCode()
-        result = 31 * result + (data?.contentHashCode() ?: 0)
-        result = 31 * result + cardData.hashCode()
-        return result
-    }
-}

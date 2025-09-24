@@ -2,7 +2,7 @@ package com.mifare.encoder.utils
 
 import android.util.Log
 import com.google.gson.Gson
-import com.mifare.encoder.BuildConfig
+// BuildConfig not available in custom build environment
 import com.mifare.encoder.models.ApiResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

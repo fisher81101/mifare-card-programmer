@@ -76,13 +76,6 @@ class AdminScanFragment : Fragment() {
         techLists = arrayOf(arrayOf(MifareClassic::class.java.name))
     }
     
-    /**
-     * Handle NFC intent forwarded from AdminModeActivity
-     */
-    fun handleNfcIntent(intent: Intent) {
-        val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
-        tag?.let { processNfcTag(it) }
-    }
     
     private fun setupRecyclerView() {
         cardDataAdapter = CardDataAdapter(scannedCards) { cardData ->
