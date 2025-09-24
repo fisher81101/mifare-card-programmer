@@ -19,20 +19,27 @@ android {
 
     signingConfigs {
         release {
-            if (project.hasProperty("MIFARE_RELEASE_STORE_FILE")) {
-                storeFile file(MIFARE_RELEASE_STORE_FILE)
-                storePassword MIFARE_RELEASE_STORE_PASSWORD
-                keyAlias MIFARE_RELEASE_KEY_ALIAS
-                keyPassword MIFARE_RELEASE_KEY_PASSWORD
-            }
+            storeFile file('../release.keystore')
+            storePassword 'android123'
+            keyAlias 'release'
+            keyPassword 'android123'
+        }
+        debug {
+            storeFile file('../debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
         }
     }
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
     

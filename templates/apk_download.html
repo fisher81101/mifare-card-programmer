@@ -40,8 +40,10 @@
             
             {% if apk_exists %}
             <div class="mt-4">
-                <p><strong>Version:</strong> 1.0 | <strong>Size:</strong> {{ apk_size }} MB | <strong>Android:</strong> 5.0+</p>
-                <p><small>MD5: 79d602707530bfdf99803510b9705c85</small></p>
+                <p><strong>Version:</strong> 1.1 | <strong>Size:</strong> {{ apk_size }} MB | <strong>Android:</strong> 5.0+</p>
+                {% if apk_md5 %}
+                <p><small>MD5: {{ apk_md5 }}</small></p>
+                {% endif %}
                 
                 <a href="/apk/download" class="btn btn-success btn-lg download-btn">
                     <i class="fas fa-download"></i> Download APK

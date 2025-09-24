@@ -690,17 +690,23 @@ def favicon():
 def apk_download_page():
     """APK download page"""
     try:
-        apk_path = os.path.join('static', 'app-debug-signed.apk')
+        apk_path = os.path.join('static', 'app-final-signed.apk')
         if os.path.exists(apk_path):
             apk_size = round(os.path.getsize(apk_path) / (1024*1024), 1)
             apk_exists = True
+            # Get MD5 for verification
+            import hashlib
+            with open(apk_path, 'rb') as f:
+                apk_md5 = hashlib.md5(f.read()).hexdigest()
         else:
             apk_size = 0
             apk_exists = False
+            apk_md5 = ""
         
         return render_template('apk_download.html', 
                              apk_size=apk_size, 
-                             apk_exists=apk_exists)
+                             apk_exists=apk_exists,
+                             apk_md5=apk_md5)
     except Exception as e:
         logger.error(f"APK page error: {e}")
         return f"Error loading APK page: {e}", 500
@@ -709,12 +715,12 @@ def apk_download_page():
 def download_apk():
     """Direct APK download"""
     try:
-        apk_path = os.path.join('static', 'app-debug-signed.apk')
+        apk_path = os.path.join('static', 'app-final-signed.apk')
         if os.path.exists(apk_path):
             return send_file(
                 apk_path,
                 as_attachment=True,
-                download_name='mifare-app-v1.0.apk',
+                download_name='mifare-app-v1.1.apk',
                 mimetype='application/vnd.android.package-archive'
             )
         else:
