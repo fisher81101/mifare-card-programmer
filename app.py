@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
@@ -684,6 +684,44 @@ def api_latest_apk():
 @app.route('/favicon.ico')
 def favicon():
     return '', 404
+
+# APK Download Routes
+@app.route('/apk')
+def apk_download_page():
+    """APK download page"""
+    try:
+        apk_path = os.path.join('static', 'app-debug-signed.apk')
+        if os.path.exists(apk_path):
+            apk_size = round(os.path.getsize(apk_path) / (1024*1024), 1)
+            apk_exists = True
+        else:
+            apk_size = 0
+            apk_exists = False
+        
+        return render_template('apk_download.html', 
+                             apk_size=apk_size, 
+                             apk_exists=apk_exists)
+    except Exception as e:
+        logger.error(f"APK page error: {e}")
+        return f"Error loading APK page: {e}", 500
+
+@app.route('/apk/download')
+def download_apk():
+    """Direct APK download"""
+    try:
+        apk_path = os.path.join('static', 'app-debug-signed.apk')
+        if os.path.exists(apk_path):
+            return send_file(
+                apk_path,
+                as_attachment=True,
+                download_name='mifare-app-v1.0.apk',
+                mimetype='application/vnd.android.package-archive'
+            )
+        else:
+            return jsonify({'error': 'APK file not found'}), 404
+    except Exception as e:
+        logger.error(f"APK download error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # Initialize database and create admin user
 def init_db():
