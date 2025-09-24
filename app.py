@@ -241,7 +241,8 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
+    # Allow admins to create new users, but redirect regular authenticated users
+    if current_user.is_authenticated and not current_user.is_admin:
         return redirect(url_for('index'))
     
     form = RegisterForm()
