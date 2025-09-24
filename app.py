@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from flask_cors import CORS
-from wtforms import StringField, PasswordField, TextAreaField, SelectField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -139,6 +139,12 @@ class CardProgramForm(FlaskForm):
 class DistributeForm(FlaskForm):
     program_id = SelectField('Card Program', coerce=int, validators=[DataRequired()])
     user_id = SelectField('User', coerce=int, validators=[DataRequired()])
+
+class AccessLinkForm(FlaskForm):
+    distribution_link = StringField('Distribution Link', 
+                                  validators=[DataRequired()], 
+                                  render_kw={"placeholder": "Paste your distribution link here..."})
+    submit = SubmitField('Access Program')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -301,6 +307,49 @@ def user_dashboard():
     
     distributions = ProgramDistribution.query.filter_by(user_id=current_user.id).all()
     return render_template('user_dashboard.html', distributions=distributions)
+
+@app.route('/access-link', methods=['GET', 'POST'])
+@login_required
+def access_link():
+    """Allow users to input and access distribution links"""
+    form = AccessLinkForm()
+    
+    if form.validate_on_submit():
+        # Extract token from the distribution link
+        distribution_link = form.distribution_link.data.strip()
+        
+        # Handle different URL formats
+        # Full URL: https://domain.com/program/TOKEN
+        # Just token: TOKEN
+        if '/program/' in distribution_link:
+            token = distribution_link.split('/program/')[-1]
+        else:
+            token = distribution_link
+        
+        # Validate token format (basic check)
+        if not token or len(token) < 20:
+            flash('Invalid distribution link format', 'danger')
+            return render_template('access_link.html', form=form)
+        
+        # Check if distribution exists and is valid
+        distribution = ProgramDistribution.query.filter_by(access_token=token).first()
+        
+        if not distribution:
+            flash('Invalid distribution link - link not found', 'danger')
+            return render_template('access_link.html', form=form)
+        
+        if distribution.expires_at < datetime.utcnow():
+            flash('This distribution link has expired', 'danger')
+            return render_template('access_link.html', form=form)
+        
+        if distribution.is_used:
+            flash('This distribution link has already been used', 'warning')
+            return render_template('access_link.html', form=form)
+        
+        # Redirect to the program access page
+        return redirect(url_for('program_access', token=token))
+    
+    return render_template('access_link.html', form=form)
 
 @app.route('/create_program', methods=['GET', 'POST'])
 @login_required

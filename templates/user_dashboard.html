@@ -10,6 +10,25 @@
     </div>
 </div>
 
+<!-- Quick Access Link Input -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-link me-2"></i>Use Distribution Link</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Have a distribution link? Paste it here to access your program directly:</p>
+                <div class="d-grid">
+                    <a href="{{ url_for('access_link') }}" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt me-2"></i>Enter Distribution Link
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% if distributions %}
 <div class="row">
     {% for dist in distributions %}

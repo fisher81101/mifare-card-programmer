@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Access Distribution Link - MIFARE System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-link me-2"></i>Access Distribution Link</h4>
+                <p class="text-muted mb-0">Enter your received distribution link below</p>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'exclamation-triangle' if category == 'danger' or category == 'error' else 'info-circle' if category == 'info' else 'check-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.distribution_link.label(class="form-label") }}
+                        {{ form.distribution_link(class="form-control form-control-lg") }}
+                        {% if form.distribution_link.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.distribution_link.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            You can paste the full URL or just the token part
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-question-circle me-2"></i>How to Use</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success"><i class="fas fa-check me-2"></i>Valid Formats:</h6>
+                        <ul class="list-unstyled">
+                            <li><small><code>https://example.com/program/ABC123...</code></small></li>
+                            <li><small><code>ABC123DEF456GHI789...</code></small></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-info"><i class="fas fa-lightbulb me-2"></i>Tips:</h6>
+                        <ul class="list-unstyled">
+                            <li><small>Copy the entire link from your email/message</small></li>
+                            <li><small>Links expire after 24 hours</small></li>
+                            <li><small>Each link can only be used once</small></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
