@@ -8,6 +8,7 @@ The system enables administrators to create card programs using a visual sector 
 
 ## Project Status: COMPLETED ✅ + PRODUCTION READY 🚀
 - ✅ **NATIVE ANDROID APK**: 11MB production-ready application with complete NFC MIFARE programming
+- ✅ **APK INSTALLATION SUCCESS**: Modern v2/v3 signature schemes resolve all "invalid package" errors
 - ✅ **FULL FUNCTIONALITY**: Scan, write, analyze, and manage MIFARE Classic 1K/4K cards
 - ✅ **UI COMPLETE**: Working RecyclerView displaying scanned card details with sector data
 - ✅ **COMPILATION SUCCESS**: All Kotlin errors resolved, clean build process achieved
@@ -49,8 +50,9 @@ Preferred communication style: Simple, everyday language.
 
 ## Deployment Notes
 - **Production Ready**: Complete security hardening with encrypted storage
-- **Educational Use**: Designed for controlled environments with proper disclaimers
+- **Educational Use**: Designed for controlled environments with proper disclaimers  
 - **Network Configuration**: Supports both local development and HTTPS production deployment
+- **APK Installation**: Uses modern v2/v3 signature schemes for Android compatibility (resolved Sept 2025)
 
 # System Architecture
 
