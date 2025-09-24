@@ -1,0 +1,8 @@
+# Bash completions for fastboot.
+# See https://github.com/nmeum/android-tools/issues/22
+
+function check_type() {
+	type -t "$1"
+}
+
+source "/nix/store/28qzkr2zsgvzh4pip920raspl1gwd77v-android-tools-35.0.1/share/android-tools/completions/fastboot"
