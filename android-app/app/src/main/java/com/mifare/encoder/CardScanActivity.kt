@@ -98,7 +98,7 @@ class CardScanActivity : AppCompatActivity() {
             
             val cardData = CardData()
             cardData.uid = MifareUtils.bytesToHex(mifareCard.tag.id)
-            cardData.type = when (mifareCard.type) {
+            cardData.cardType = when (mifareCard.type) {
                 MifareClassic.TYPE_CLASSIC -> "MIFARE Classic"
                 MifareClassic.TYPE_PLUS -> "MIFARE Plus"
                 MifareClassic.TYPE_PRO -> "MIFARE Pro"

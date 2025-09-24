@@ -113,9 +113,9 @@ class AdminLogsFragment : Fragment() {
                     android.provider.Settings.Secure.ANDROID_ID
                 )
             }\n")
-            append("="*50 + "\n\n")
+            append("=".repeat(50) + "\n\n")
             append(logs)
-            append("\n\n" + "="*50)
+            append("\n\n" + "=".repeat(50))
             append("\nEnd of admin logs export")
         }
         

@@ -5,6 +5,7 @@ data class CardData(
     var cardType: String = "",
     var size: String = "",
     var sectors: List<String> = emptyList(),
+    var sectorData: Map<Int, String> = emptyMap(),
     var saltoData: SaltoData? = null,
     var timestamp: Long = System.currentTimeMillis(),
     var rawHexData: String = ""
@@ -17,6 +18,10 @@ data class SaltoData(
     var accessDoors: List<String>? = null,
     var startTimestamp: String = "",
     var endTimestamp: String = "",
+    var validFrom: String? = null,
+    var validUntil: String? = null,
+    var cardStatus: String? = null,
+    var issuerId: String? = null,
     var checksum: String = "",
     var rawData: Map<String, String> = emptyMap(),
     var isValid: Boolean = false

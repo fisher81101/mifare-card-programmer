@@ -78,9 +78,7 @@ class AdminScanFragment : Fragment() {
     
     
     private fun setupRecyclerView() {
-        cardDataAdapter = CardDataAdapter(scannedCards) { cardData ->
-            showCardDetails(cardData)
-        }
+        cardDataAdapter = CardDataAdapter()
         
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -100,7 +98,7 @@ class AdminScanFragment : Fragment() {
         
         binding.clearButton.setOnClickListener {
             scannedCards.clear()
-            cardDataAdapter.notifyDataSetChanged()
+            cardDataAdapter.updateData(null) // Clear adapter data
             binding.statusText.text = "Scan history cleared"
         }
         
@@ -134,8 +132,7 @@ class AdminScanFragment : Fragment() {
                 val cardData = scanCard(tag)
                 if (cardData != null) {
                     scannedCards.add(0, cardData) // Add to top
-                    cardDataAdapter.notifyItemInserted(0)
-                    binding.recyclerView.scrollToPosition(0)
+                    cardDataAdapter.updateData(cardData) // Update the adapter with new card data
                     
                     binding.statusText.text = "Card scanned successfully (${cardData.cardType})"
                     showMessage("Card data decoded and added to list")
@@ -193,7 +190,7 @@ class AdminScanFragment : Fragment() {
             }
             
             // Analyze for Salto protocol
-            val saltoAnalysis = SaltoProtocol.analyzeCardData(rawHexData.toString())
+            val saltoAnalysis = SaltoProtocol.analyzeCard(sectorData.values.toList())
             
             CardData(
                 uid = uid,
@@ -228,14 +225,14 @@ class AdminScanFragment : Fragment() {
             }
             
             append("\n=== SALTO ANALYSIS ===\n")
-            if (cardData.saltoData != null) {
-                append("User ID: ${cardData.saltoData.userId ?: "Unknown"}\n")
-                append("Access Doors: ${cardData.saltoData.accessDoors?.joinToString(", ") ?: "None"}\n")
-                append("Valid From: ${cardData.saltoData.validFrom ?: "Unknown"}\n")
-                append("Valid Until: ${cardData.saltoData.validUntil ?: "Unknown"}\n")
-                append("Card Status: ${cardData.saltoData.cardStatus ?: "Unknown"}\n")
-                append("Issuer ID: ${cardData.saltoData.issuerId ?: "Unknown"}\n")
-            } else {
+            cardData.saltoData?.let { saltoData ->
+                append("User ID: ${saltoData.userId}\n")
+                append("Access Doors: ${saltoData.accessDoors?.joinToString(", ") ?: "None"}\n")
+                append("Valid From: ${saltoData.validFrom ?: "Unknown"}\n")
+                append("Valid Until: ${saltoData.validUntil ?: "Unknown"}\n")
+                append("Card Status: ${saltoData.cardStatus ?: "Unknown"}\n")
+                append("Issuer ID: ${saltoData.issuerId ?: "Unknown"}\n")
+            } ?: run {
                 append("No Salto protocol data detected\n")
             }
             
@@ -266,20 +263,20 @@ class AdminScanFragment : Fragment() {
             append("MIFARE Card Scan Export\n")
             append("Generated: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}\n")
             append("Total Cards: ${scannedCards.size}\n")
-            append("="*50 + "\n\n")
+            append("=".repeat(50) + "\n\n")
             
             scannedCards.forEachIndexed { index, card ->
                 append("Card ${index + 1}: ${card.uid}\n")
                 append("Type: ${card.cardType}\n")
                 append("Timestamp: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(card.timestamp))}\n")
                 
-                if (card.saltoData != null) {
-                    append("Salto User ID: ${card.saltoData.userId}\n")
-                    append("Access Doors: ${card.saltoData.accessDoors?.joinToString(", ")}\n")
+                card.saltoData?.let { saltoData ->
+                    append("Salto User ID: ${saltoData.userId}\n")
+                    append("Access Doors: ${saltoData.accessDoors?.joinToString(", ")}\n")
                 }
                 
                 append("Raw Data: ${card.rawHexData.take(100)}...\n")
-                append("-"*30 + "\n\n")
+                append("-".repeat(30) + "\n\n")
             }
         }
         

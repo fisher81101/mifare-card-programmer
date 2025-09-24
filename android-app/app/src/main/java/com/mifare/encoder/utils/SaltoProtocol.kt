@@ -291,4 +291,63 @@ object SaltoProtocol {
         
         return errors
     }
+    
+    /**
+     * Generate Salto protocol payload from configuration map
+     */
+    fun generateSaltoPayload(config: Map<String, String>): ByteArray {
+        val userId = config["userId"] ?: "00000"
+        val doors = config["doors"] ?: ""
+        val startDate = config["startDate"] ?: ""
+        val endDate = config["endDate"] ?: ""
+        val accessLevel = config["accessLevel"] ?: "user"
+        
+        // Create a simple Salto-compatible payload
+        val payload = StringBuilder()
+        
+        // User ID (8 bytes)
+        payload.append(userId.padEnd(8, '0').take(8))
+        
+        // Access doors (encode as bit flags, 16 bytes)
+        val doorNumbers = doors.split(",").mapNotNull { it.trim().toIntOrNull() }
+        val doorBits = ByteArray(16) { 0 }
+        doorNumbers.forEach { doorNum ->
+            if (doorNum in 1..128) {
+                val byteIndex = (doorNum - 1) / 8
+                val bitIndex = (doorNum - 1) % 8
+                if (byteIndex < doorBits.size) {
+                    doorBits[byteIndex] = (doorBits[byteIndex].toInt() or (1 shl bitIndex)).toByte()
+                }
+            }
+        }
+        payload.append(MifareUtils.bytesToHex(doorBits))
+        
+        // Start/end timestamps (8 bytes each)
+        val startTimestamp = try {
+            java.time.Instant.parse(startDate).epochSecond
+        } catch (e: Exception) {
+            System.currentTimeMillis() / 1000
+        }
+        val endTimestamp = try {
+            java.time.Instant.parse(endDate).epochSecond
+        } catch (e: Exception) {
+            (System.currentTimeMillis() / 1000) + (30 * 24 * 3600) // 30 days
+        }
+        
+        payload.append(String.format("%016X", startTimestamp))
+        payload.append(String.format("%016X", endTimestamp))
+        
+        // Access level (4 bytes)
+        val levelCode = when (accessLevel.lowercase()) {
+            "admin" -> "FFFF"
+            "manager" -> "7FFF"
+            "staff" -> "3FFF"
+            "guest" -> "0FFF"
+            else -> "1FFF"
+        }
+        payload.append(levelCode.repeat(2))
+        
+        // Convert hex string to bytes
+        return MifareUtils.hexToBytes(payload.toString())
+    }
 }

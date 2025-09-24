@@ -18,7 +18,7 @@ class CardDataAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private const val TYPE_SALTO_DATA = 2
     }
     
-    fun updateData(newCardData: CardData) {
+    fun updateData(newCardData: CardData?) {
         cardData = newCardData
         notifyDataSetChanged()
     }
@@ -80,7 +80,7 @@ class CardDataAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         
         fun bind(cardData: CardData) {
             uidText.text = "UID: ${cardData.uid}"
-            typeText.text = "Type: ${cardData.type}"
+            typeText.text = "Type: ${cardData.cardType}"
             sizeText.text = "Size: ${cardData.size}"
         }
     }

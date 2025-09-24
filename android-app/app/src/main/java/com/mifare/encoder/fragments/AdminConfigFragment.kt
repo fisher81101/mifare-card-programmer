@@ -308,7 +308,7 @@ class AdminConfigFragment : Fragment() {
         val config = buildString {
             append("MIFARE Admin Configuration Export\n")
             append("Generated: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}\n")
-            append("="*40 + "\n\n")
+            append("=".repeat(40) + "\n\n")
             
             append("Backend Configuration:\n")
             append("URL: ${binding.backendUrlEditText.text}\n")
