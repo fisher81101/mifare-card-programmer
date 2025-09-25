@@ -199,16 +199,45 @@ class UserModeActivity : AppCompatActivity() {
             updateStatus("Connecting to card...")
             mifareCard.connect()
             
-            // Get device/user identifier for backend request
-            val deviceId = android.provider.Settings.Secure.getString(
-                contentResolver, 
-                android.provider.Settings.Secure.ANDROID_ID
-            )
+            updateStatus("Preparing program data...")
             
-            updateStatus("Fetching configuration...")
+            // First check for distribution link program data
+            var config: Map<String, String>? = null
+            val sharedPrefs = getSharedPreferences("user_program", MODE_PRIVATE)
+            val currentProgram = sharedPrefs.getString("current_program", null)
             
-            // Automatic configuration fetch from backend
-            val config = fetchUserConfiguration(deviceId)
+            if (currentProgram != null) {
+                // Use distribution link program data
+                try {
+                    val json = JSONObject(currentProgram)
+                    if (json.getBoolean("success")) {
+                        val program = json.getJSONObject("program")
+                        val sectorsData = program.getJSONObject("sectors_data")
+                        
+                        // Convert JSON program data to config format for MifareUtils
+                        config = mutableMapOf<String, String>().apply {
+                            put("programId", program.getString("id"))
+                            put("programName", program.getString("name"))
+                            put("sectorsData", sectorsData.toString())
+                            put("userId", "distribution_user")
+                        }
+                        updateStatus("Using distribution link program: ${program.getString("name")}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing distribution program data", e)
+                }
+            }
+            
+            // Fallback to automatic configuration fetch if no distribution link data
+            if (config == null) {
+                val deviceId = android.provider.Settings.Secure.getString(
+                    contentResolver, 
+                    android.provider.Settings.Secure.ANDROID_ID
+                )
+                updateStatus("Fetching configuration...")
+                config = fetchUserConfiguration(deviceId)
+            }
+            
             if (config == null) {
                 showError("No programming data available. Contact admin.")
                 return
