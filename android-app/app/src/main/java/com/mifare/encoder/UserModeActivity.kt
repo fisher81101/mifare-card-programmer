@@ -18,6 +18,16 @@ import com.mifare.encoder.utils.ApiClient
 import com.mifare.encoder.utils.AuthManager
 import com.mifare.encoder.utils.MifareUtils
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.widget.EditText
+import android.widget.Button
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.FormBody
+import org.json.JSONObject
 
 class UserModeActivity : AppCompatActivity() {
     
@@ -94,6 +104,24 @@ class UserModeActivity : AppCompatActivity() {
         // Simple status display
         updateStatus("Ready to program cards")
         binding.progressBar.visibility = View.GONE
+        
+        // Distribution link input handling
+        val editTextLink: EditText = findViewById(R.id.editTextDistributionLink)
+        val buttonSubmit: Button = findViewById(R.id.buttonSubmitLink)
+        
+        buttonSubmit.setOnClickListener {
+            val link = editTextLink.text.toString().trim()
+            if (link.isEmpty()) {
+                Toast.makeText(this, "Please enter a valid link", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            // Validate link format - check if it contains expected patterns
+            if (!link.contains("/program/") && link.length < 20) {
+                Toast.makeText(this, "Invalid distribution link format", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            processDistributionLink(link)
+        }
     }
     
     private fun loadBackendConfig() {
@@ -278,5 +306,78 @@ class UserModeActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+    
+    private fun processDistributionLink(link: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Extract token from distribution link
+                val token = if (link.contains("/program/")) {
+                    link.substringAfter("/program/")
+                } else {
+                    link
+                }
+                
+                // Retrieve user's Bearer token from shared preferences or existing auth system
+                val sharedPref = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                val authToken = token // Use the distribution token directly for access
+                
+                if (authToken.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@UserModeActivity, "Invalid distribution link", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                
+                val client = OkHttpClient()
+                // Use existing backend API that accepts distribution tokens
+                val backendUrl = "http://10.0.2.2:5000" // Default for emulator
+                val request = Request.Builder()
+                    .url("$backendUrl/api/android/programs")
+                    .addHeader("Authorization", "Bearer $authToken")
+                    .get()
+                    .build()
+                
+                val response: Response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    val json = JSONObject(responseBody ?: "{}")
+                    
+                    if (json.getBoolean("success")) {
+                        // Handle success: extract program data
+                        val program = json.getJSONObject("program")
+                        val programName = program.getString("name")
+                        val programId = program.getString("id")
+                        
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@UserModeActivity, "Program accessed successfully: $programName", Toast.LENGTH_LONG).show()
+                            updateStatus("Program loaded: $programName - Hold NFC card to phone")
+                            
+                            // Store the program data for NFC programming
+                            val sharedPrefs = getSharedPreferences("user_program", MODE_PRIVATE)
+                            with(sharedPrefs.edit()) {
+                                putString("current_program", responseBody)
+                                putString("current_token", authToken)
+                                apply()
+                            }
+                        }
+                    } else {
+                        val message = json.optString("message", "Unknown error")
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@UserModeActivity, "Failed to access program: $message", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@UserModeActivity, "Failed to access: ${response.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Distribution link processing error", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@UserModeActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

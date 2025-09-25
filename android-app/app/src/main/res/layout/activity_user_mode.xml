@@ -101,6 +101,59 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/statusTextView" />
 
+    <!-- Distribution Link Input Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/distributionCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="32dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progressBar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Distribution Link"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/user_mode_text"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/editTextDistributionLink"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Paste distribution link here"
+                android:inputType="textUri"
+                android:imeOptions="actionDone"
+                android:textSize="14sp"
+                android:background="@drawable/edit_text_background"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/buttonSubmitLink"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Access Program"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@color/user_mode_accent" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- Footer Warning -->
     <TextView
         android:id="@+id/footerTextView"
@@ -108,6 +161,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
+        android:layout_marginTop="16dp"
         android:layout_marginBottom="32dp"
         android:text="@string/educational_warning"
         android:textSize="12sp"
@@ -115,6 +169,7 @@
         android:textColor="@color/warning_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/distributionCard" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

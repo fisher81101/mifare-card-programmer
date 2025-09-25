@@ -12,6 +12,7 @@
     <!-- User Mode Colors -->
     <color name="user_mode_background">#F5F5F5</color>
     <color name="user_mode_text">#333333</color>
+    <color name="user_mode_accent">#3498DB</color>
     <color name="status_text">#666666</color>
     <color name="warning_text">#FF9800</color>
     
